@@ -824,6 +824,12 @@ window.startBattle = function() {
         sidebar.style.gap = '10px';
     }
     
+    // 隐藏left-panel（对战模式不需要）
+    var leftPanel = document.querySelector('.left-panel');
+    if (leftPanel) {
+        leftPanel.style.display = 'none';
+    }
+    
     // 隐藏原来的对手信息（用座位代替）
     var opponentInfo = document.getElementById('opponentInfo');
     if (opponentInfo) opponentInfo.style.display = 'none';
@@ -910,7 +916,7 @@ window.goToCover = function() {
             sidebar.style.gap = '';
         }
         
-        // 恢复left-panel
+        // 恢复left-panel（显示）
         var leftPanel = document.querySelector('.left-panel');
         if (leftPanel) leftPanel.style.display = '';
         
