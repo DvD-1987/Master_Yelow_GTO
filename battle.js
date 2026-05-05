@@ -359,14 +359,24 @@ function handlePlayerAction(action) {
 }
 
 function moveToNextPlayer() {
+    // 记录当前起始玩家（用于检测一轮是否结束）
+    var startPlayerIndex = battleState.currentPlayerIndex;
     var nextIndex = (battleState.currentPlayerIndex + 1) % 6;
     var loops = 0;
+    var foundNext = false;
     
     // 找到下一个未弃牌且未ALL IN的玩家
     while (loops < 6) {
         var nextPlayer = battleState.players[nextIndex];
         if (!nextPlayer.isFolded && !nextPlayer.isAllIn) {
+            // 检查是否回到了起始点（一轮结束）
+            if (nextIndex === startPlayerIndex) {
+                // 一轮结束，进入下一阶段
+                nextStreet();
+                return;
+            }
             battleState.currentPlayerIndex = nextIndex;
+            foundNext = true;
             
             // 如果是AI，执行AI动作
             if (!nextPlayer.isHuman) {
@@ -378,21 +388,148 @@ function moveToNextPlayer() {
         loops++;
     }
     
+    // 如果没找到下一个玩家（可能所有人都弃牌或ALL IN）
+    if (!foundNext) {
+        // 检查游戏是否结束
+        checkBattleEnd();
+        if (!battleState.gameOver) {
+            // 进入下一阶段
+            nextStreet();
+        }
+        return;
+    }
+    
     updateBattleUI();
+}
+
+// 检查一轮是否真的结束（防止无限循环）
+function isRoundComplete() {
+    // 如果所有未弃牌玩家都下注到相同金额，返回true
+    var activePlayers = 0;
+    var allMatched = true;
+    for (var i = 0; i < battleState.players.length; i++) {
+        var p = battleState.players[i];
+        if (!p.isFolded) {
+            activePlayers++;
+            if (p.currentBet !== battleState.currentBet && !p.isAllIn) {
+                allMatched = false;
+            }
+        }
+    }
+    return activePlayers <= 1 || allMatched;
+}
+
+// 进入下一阶段
+function nextStreet() {
+    console.log('[对战] 进入下一阶段，当前：', battleState.currentStreet);
+    
+    // 重置所有玩家的下注额
+    for (var i = 0; i < battleState.players.length; i++) {
+        battleState.players[i].currentBet = 0;
+    }
+    battleState.currentBet = 0;
+    
+    // 根据当前阶段发牌
+    switch(battleState.currentStreet) {
+        case 'preflop':
+            // 发flop（3张）
+            battleState.board = [battleState.deck.pop(), battleState.deck.pop(), battleState.deck.pop()];
+            battleState.currentStreet = 'flop';
+            console.log('[对战] Flop:', battleState.board);
+            break;
+        case 'flop':
+            // 发turn（1张）
+            battleState.board.push(battleState.deck.pop());
+            battleState.currentStreet = 'turn';
+            console.log('[对战] Turn:', battleState.board);
+            break;
+        case 'turn':
+            // 发river（1张）
+            battleState.board.push(battleState.deck.pop());
+            battleState.currentStreet = 'river';
+            console.log('[对战] River:', battleState.board);
+            break;
+        case 'river':
+            // 进入摊牌
+            battleState.currentStreet = 'showdown';
+            console.log('[对战] 进入摊牌阶段');
+            showdown();
+            return;
+    }
+    
+    // 设置下一个行动玩家（从小盲开始）
+    battleState.currentPlayerIndex = (battleState.dealerIndex + 1) % 6;
+    
+    // 如果下一个玩家已弃牌或ALL IN，继续找下一个
+    var loops = 0;
+    while (loops < 6) {
+        var p = battleState.players[battleState.currentPlayerIndex];
+        if (!p.isFolded && !p.isAllIn) {
+            break;
+        }
+        battleState.currentPlayerIndex = (battleState.currentPlayerIndex + 1) % 6;
+        loops++;
+    }
+    
+    updateBattleUI();
+    
+    // 如果下一个是AI，自动行动
+    var nextPlayer = battleState.players[battleState.currentPlayerIndex];
+    if (nextPlayer && !nextPlayer.isHuman && !nextPlayer.isFolded && !nextPlayer.isAllIn) {
+        setTimeout(function() { aiAction(battleState.currentPlayerIndex); }, 1000);
+    }
+}
+
+// 摊牌阶段
+function showdown() {
+    console.log('[对战] 摊牌阶段 - 简化版，直接结束');
+    // 简化：暂时直接结束游戏
+    battleState.gameOver = true;
+    var player = battleState.players[battleState.playerSeatIndex];
+    var activePlayers = 0;
+    for (var i = 0; i < battleState.players.length; i++) {
+        if (!battleState.players[i].isFolded) activePlayers++;
+    }
+    showBattleResult(activePlayers === 1 && !player.isFolded);
 }
 
 function aiAction(playerIndex) {
     var player = battleState.players[playerIndex];
     if (!player || player.isFolded || player.isAllIn) return;
     
-    // 简化AI：随机动作
-    var actions = ['fold', 'check', 'call', 'bet', 'raise', 'allin'];
-    var randomAction = actions[Math.floor(Math.random() * actions.length)];
+    // 根据情况选择动作
+    var action;
+    var callAmount = battleState.currentBet - player.currentBet;
+    var potOdds = callAmount > 0 ? callAmount / (battleState.pot + callAmount) : 0;
     
-    console.log('[对战] AI', playerIndex, '执行动作：', randomAction);
+    // 简单策略：根据筹码深度和底池赔率决策
+    if (battleState.currentBet === player.currentBet) {
+        // 没人下注，可以check或bet
+        if (Math.random() < 0.7) {
+            action = 'check';
+        } else {
+            action = 'bet';
+        }
+    } else if (callAmount <= player.chips) {
+        // 需要跟注
+        if (potOdds < 0.3 && Math.random() < 0.6) {
+            action = 'call';
+        } else if (player.chips > callAmount * 2 && Math.random() < 0.4) {
+            action = 'raise';
+        } else if (potOdds < 0.5 && Math.random() < 0.5) {
+            action = 'call';
+        } else {
+            action = 'fold';
+        }
+    } else {
+        // 筹码不够跟注，只能ALL IN或弃牌
+        action = Math.random() < 0.3 ? 'allin' : 'fold';
+    }
+    
+    console.log('[对战] AI', playerIndex, '(', player.position, ') 执行动作：', action, '筹码:', player.chips/100, 'bb');
     
     // 执行动作
-    executeAction(playerIndex, randomAction);
+    executeAction(playerIndex, action);
     
     // 移动到下一个玩家
     if (!battleState.gameOver) {
