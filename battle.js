@@ -186,32 +186,13 @@ function updateSeatsDisplay() {
         tableFelt.appendChild(seat);
     }
     
-    // 高亮当前行动座位
-    highlightCurrentSeat();
+    // 高亮当前行动座位（只用CSS，不用JS设置样式）
+    // CSS中.seat.active已定义好样式
 }
 
 function highlightCurrentSeat() {
-    // 移除所有座位的高亮
-    var allSeats = document.querySelectorAll('.seat');
-    for (var i = 0; i < allSeats.length; i++) {
-        allSeats[i].style.boxShadow = '';
-        allSeats[i].style.transform = 'translate(-50%, -50%)';
-        allSeats[i].style.zIndex = '';
-    }
-    
-    // 高亮当前行动座位
-    var currentSeat = document.querySelector('.seat.active');
-    if (currentSeat) {
-        currentSeat.style.boxShadow = '0 0 20px #ffd700, 0 0 40px #ffd700';
-        currentSeat.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        currentSeat.style.zIndex = '100';
-        
-        // 如果是AI，添加脉冲动画
-        var player = battleState.players[battleState.currentPlayerIndex];
-        if (player && !player.isHuman) {
-            currentSeat.style.animation = 'pulse 1s infinite';
-        }
-    }
+    // 不需要这个函数了，CSS的.seat.active会自动处理
+    // 保留空函数避免报错
 }
 
 function updatePlayerHand() {
@@ -297,31 +278,16 @@ function createActionLogContainer() {
     
     logContainer = document.createElement('div');
     logContainer.id = 'actionLog';
-    logContainer.style.cssText = 'margin:10px 0;padding:10px;background:#1a1a2e;border-radius:8px;max-height:200px;overflow-y:auto;font-size:14px;color:#ccc;width:100%;box-sizing:border-box;';
-    
-    // 尝试多个位置
-    var inserted = false;
-    
-    // 优先放到left-panel
-    var leftPanel = document.querySelector('.left-panel');
-    if (leftPanel) {
-        leftPanel.appendChild(logContainer);
-        inserted = true;
-    }
-    
-    // 如果left-panel不存在，放到table-felt下面
-    if (!inserted) {
-        var tableFelt = document.querySelector('.table-felt');
-        if (tableFelt && tableFelt.parentNode) {
-            tableFelt.parentNode.insertBefore(logContainer, tableFelt.nextSibling);
-            inserted = true;
-        }
-    }
-    
-    // 最后尝试放到gameScreen
-    if (!inserted) {
-        var gameScreen = document.getElementById('gameScreen');
-        if (gameScreen) {
+    logContainer.style.cssText = 'margin:15px auto;padding:12px 15px;background:#1a1a2e;border-radius:10px;max-height:250px;overflow-y:auto;font-size:15px;color:#eee;width:95%;max-width:800px;box-sizing:border-box;border:1px solid #333;';
+
+    // 放到牌桌下面，横跨整个宽度
+    var gameScreen = document.getElementById('gameScreen');
+    if (gameScreen) {
+        // 找到table-felt，插入到它后面
+        var tableFelt = gameScreen.querySelector('.table-felt');
+        if (tableFelt) {
+            tableFelt.insertAdjacentElement('afterend', logContainer);
+        } else {
             gameScreen.appendChild(logContainer);
         }
     }
