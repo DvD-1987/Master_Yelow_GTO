@@ -231,7 +231,18 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
     padding: 0.5rem; cursor: default;
 }
 
-.seat.active { border-color: var(--gold-light); box-shadow: var(--glow-gold); background: rgba(255,215,0,0.15); }
+.seat.active { border-color: #ffd700 !important; box-shadow: 0 0 20px #ffd700, 0 0 40px rgba(255,215,0,0.5) !important; background: rgba(255,215,0,0.25) !important; transform: translate(-50%, -50%) scale(1.15) !important; z-index: 100 !important; animation: seatPulse 1.2s infinite; }
+
+@keyframes seatPulse {
+    0% { box-shadow: 0 0 20px #ffd700, 0 0 40px rgba(255,215,0,0.5); }
+    50% { box-shadow: 0 0 30px #ffd700, 0 0 60px rgba(255,215,0,0.7); }
+    100% { box-shadow: 0 0 20px #ffd700, 0 0 40px rgba(255,215,0,0.5); }
+}
+
+.seat.player-seat {
+    border-color: #00ff88 !important;
+    background: rgba(0,255,136,0.15) !important;
+}
 
 .seat-name { font-size: 1rem; color: var(--gold); margin-bottom: 0.2rem; white-space: nowrap; }
 
