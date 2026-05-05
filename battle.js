@@ -596,6 +596,16 @@ function nextStreet() {
         loops++;
     }
     
+    // 如果所有未弃牌玩家都ALL IN了，直接发完剩余牌
+    var activePlayers = battleState.players.filter(function(p) { return !p.isFolded; });
+    var allAllIn = activePlayers.length > 0 && activePlayers.every(function(p) { return p.isAllIn; });
+    
+    if (allAllIn) {
+        console.log('[对战] 所有玩家ALL IN，直接发完剩余牌');
+        fastForwardToShowdown();
+        return;
+    }
+    
     updateBattleUI();
     
     // 如果下一个是AI，自动行动
@@ -603,6 +613,43 @@ function nextStreet() {
     if (nextPlayer && !nextPlayer.isHuman && !nextPlayer.isFolded && !nextPlayer.isAllIn) {
         setTimeout(function() { aiAction(battleState.currentPlayerIndex); }, 1000);
     }
+}
+
+// 快速发完剩余牌，进入摊牌
+function fastForwardToShowdown() {
+    console.log('[对战] 快速发牌到摊牌，当前阶段：', battleState.currentStreet);
+    
+    // 根据当前阶段直接发完剩余牌
+    switch(battleState.currentStreet) {
+        case 'preflop':
+            // 直接发5张公共牌
+            battleState.board = [
+                battleState.deck.pop(), battleState.deck.pop(), battleState.deck.pop(),
+                battleState.deck.pop(), battleState.deck.pop()
+            ];
+            battleState.currentStreet = 'river';
+            break;
+        case 'flop':
+            // 发turn和river
+            battleState.board.push(battleState.deck.pop());
+            battleState.board.push(battleState.deck.pop());
+            battleState.currentStreet = 'river';
+            break;
+        case 'turn':
+            // 发river
+            battleState.board.push(battleState.deck.pop());
+            battleState.currentStreet = 'river';
+            break;
+    }
+    
+    console.log('[对战] 发牌完成，公共牌：', battleState.board);
+    updateBattleUI();
+    
+    // 延迟进入摊牌
+    setTimeout(function() {
+        battleState.currentStreet = 'showdown';
+        showdown();
+    }, 1500);
 }
 
 // 摊牌阶段
