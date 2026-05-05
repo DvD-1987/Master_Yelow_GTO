@@ -67,10 +67,7 @@ function initBattle() {
     postBlinds();
     
     // 更新UI
-    console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
-    
-    // 创建行动日志容器（确保一定存在）
-    createActionLogContainer();
+    updateBattleUI();
     
     // 添加CSS动画
     addBattleStyles();
