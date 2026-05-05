@@ -18,3 +18,16 @@ node_modules/
 .idea/
 *.swp
 *.swo
+
+# 生成脚本和临时文件
+*.py
+*.txt
+*.bak
+*.log
+.workbuddy/
+scenarios.js
+scenarios_temp.json
+scenarios_new.js
+scenarios_fixed.js
+scenarios_new_full.js
+题库格式指导.md
