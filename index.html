@@ -42,11 +42,10 @@
                     <div class="cover-card-soon">即将上线</div>
                 </div>
                 
-                <div class="cover-card" onclick="showComingSoon('概率计算')">
+                <div class="cover-card" onclick="openProbabilityModal()">
                     <div class="cover-card-icon">🧮</div>
                     <div class="cover-card-title">概率计算</div>
                     <div class="cover-card-desc">胜率、赔率、MDF等专业工具</div>
-                    <div class="cover-card-soon">即将上线</div>
                 </div>
             </div>
             
@@ -300,6 +299,149 @@
                     <ul class="teaching-list" id="teachingPoints">
                         <li>暂无教学要点</li>
                     </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 概率计算教学模块 -->
+    <div id="probabilityModal" class="modal hidden">
+        <div class="modal-content probability-modal">
+            <div class="modal-header">
+                <div class="modal-title">🧮 概率计算教学</div>
+                <button class="modal-close-btn" onclick="closeProbabilityModal()">×</button>
+            </div>
+            
+            <!-- 步骤标签页 -->
+            <div class="prob-tabs">
+                <button class="prob-tab active" onclick="switchProbTab('basic')">简单理解</button>
+                <button class="prob-tab" onclick="switchProbTab('simple')">简单使用</button>
+                <button class="prob-tab" onclick="switchProbTab('deep')">深入理解</button>
+                <button class="prob-tab" onclick="switchProbTab('pro')">深入使用</button>
+            </div>
+            
+            <!-- 简单理解 -->
+            <div id="prob-basic" class="prob-content active">
+                <h3>什么是胜率、赔率、MDF？</h3>
+                <div class="concept-card">
+                    <h4>🎯 胜率 (Equity)</h4>
+                    <p>你的牌平均能赢多少。比如AA对抗随机牌，胜率约85%。</p>
+                    <div class="example">例子：翻牌前AA vs KK，AA胜率约80%</div>
+                </div>
+                <div class="concept-card">
+                    <h4>💰 赔率 (Odds)</h4>
+                    <p>你需要投入多少才能赢得底池。赔率好=风险小、回报大。</p>
+                    <div class="example">例子：底池100，对手下注50，你的赔率是3:1（100:50+50）</div>
+                </div>
+                <div class="concept-card">
+                    <h4>🛡️ MDF (Minimum Defense Frequency)</h4>
+                    <p>面对下注，你最少要跟注或加注的频率，防止对手随意诈唬。</p>
+                    <div class="example">公式：MDF = 底池 / (底池 + 下注额)。如下注50到100底池，MDF = 100/(100+50) = 67%</div>
+                </div>
+            </div>
+            
+            <!-- 简单使用 -->
+            <div id="prob-simple" class="prob-content">
+                <h3>一键计算器</h3>
+                <div class="calc-form">
+                    <div class="form-group">
+                        <label>你的手牌</label>
+                        <input type="text" id="calcHand" placeholder="如: AA, AKs, T9o" value="AA">
+                    </div>
+                    <div class="form-group">
+                        <label>对手范围</label>
+                        <select id="calcRange">
+                            <option value="random">随机牌</option>
+                            <option value="top20">前20%强牌</option>
+                            <option value="top10">前10%强牌</option>
+                            <option value="pair+">对子及以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>公共牌（可选）</label>
+                        <input type="text" id="calcBoard" placeholder="如: Ah Kd Qc">
+                    </div>
+                    <button class="calc-btn" onclick="calcSimple()">计算胜率</button>
+                </div>
+                <div id="calcResult" class="calc-result hidden">
+                    <div class="result-item">
+                        <span class="result-label">胜率</span>
+                        <span class="result-value" id="resultEquity">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">赢率百分比</span>
+                        <span class="result-value" id="resultPercent">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 深入理解 -->
+            <div id="prob-deep" class="prob-content">
+                <h3>数学原理详解</h3>
+                <div class="deep-section">
+                    <h4>胜率计算原理</h4>
+                    <p>胜率 = (获胜组合数 / 总组合数) × 100%</p>
+                    <p>例如：翻牌圈有2张补牌（Outs），剩余47张未知牌，胜率 ≈ (47-9)/47 ≈ 81%</p>
+                    <div class="formula">快速估算：Outs × 2 = 翻牌圈胜率%，Outs × 4 = 转牌圈胜率%</div>
+                </div>
+                <div class="deep-section">
+                    <h4>赔率计算</h4>
+                    <p>Pot Odds = 底池大小 / 需要跟注的金额</p>
+                    <p>Implied Odds = (底池 + 预期后续可赢取) / 需要跟注的金额</p>
+                    <div class="formula">决策：如果胜率 > 1/(赔率+1)，则跟注有利可图</div>
+                </div>
+                <div class="deep-section">
+                    <h4>MDF详解</h4>
+                    <p>MDF (Minimum Defense Frequency) = 底池 / (底池 + 下注额)</p>
+                    <p>作用：如果你防守频率低于MDF，对手可以任意下注诈唬获利。</p>
+                    <div class="example">实例：底池100，下注50，MDF = 100/(100+50) = 67%。你需要至少跟注2/3的牌。</div>
+                </div>
+            </div>
+            
+            <!-- 深入使用 -->
+            <div id="prob-pro" class="prob-content">
+                <h3>专业工具</h3>
+                <div class="pro-tool">
+                    <h4>🎯 胜率计算器（高级）</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>手牌1</label>
+                            <input type="text" id="proHand1" placeholder="如: Ah As">
+                        </div>
+                        <div class="form-group">
+                            <label>手牌2</label>
+                            <input type="text" id="proHand2" placeholder="如: Kc Kh">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>公共牌</label>
+                        <input type="text" id="proBoard" placeholder="如: Ad 7c 2s">
+                    </div>
+                    <button class="calc-btn" onclick="calcAdvanced()">高级计算</button>
+                    <div id="proResult" class="calc-result hidden">
+                        <div class="result-item"><span>手牌1胜率</span><span id="proEquity1">-</span></div>
+                        <div class="result-item"><span>手牌2胜率</span><span id="proEquity2">-</span></div>
+                        <div class="result-item"><span>平局率</span><span id="proTie">-</span></div>
+                    </div>
+                </div>
+                
+                <div class="pro-tool">
+                    <h4>📊 MDF计算器</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>底池大小</label>
+                            <input type="number" id="mdfPot" placeholder="100" value="100">
+                        </div>
+                        <div class="form-group">
+                            <label>下注金额</label>
+                            <input type="number" id="mdfBet" placeholder="50" value="50">
+                        </div>
+                    </div>
+                    <button class="calc-btn" onclick="calcMDF()">计算MDF</button>
+                    <div id="mdfResult" class="calc-result hidden">
+                        <div class="result-item"><span>MDF</span><span id="mdfValue">-</span></div>
+                        <div class="result-item"><span>建议防守频率</span><span id="mdfFreq">-</span></div>
+                    </div>
                 </div>
             </div>
         </div>

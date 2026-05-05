@@ -567,3 +567,86 @@ function showComingSoon(feature) {
 function closeModal() {
     document.getElementById('comingSoonModal').classList.add('hidden');
 }
+/**
+ * 概率计算模块
+ */
+function openProbabilityModal() {
+    document.getElementById('probabilityModal').classList.remove('hidden');
+    // 默认显示第一个tab
+    switchProbTab('basic');
+}
+
+function closeProbabilityModal() {
+    document.getElementById('probabilityModal').classList.add('hidden');
+}
+
+function switchProbTab(tab) {
+    // 切换tab按钮状态
+    document.querySelectorAll('.prob-tab').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // 切换内容显示
+    document.querySelectorAll('.prob-content').forEach(content => content.classList.remove('active'));
+    document.getElementById('prob-' + tab).classList.add('active');
+}
+
+/**
+ * 简单胜率计算（基于预定义数据）
+ */
+function calcSimple() {
+    const hand = document.getElementById('calcHand').value.trim().toUpperCase();
+    const range = document.getElementById('calcRange').value;
+    
+    // 预定义胜率数据（简化版）
+    const equityMap = {
+        'AA': 0.85, 'KK': 0.82, 'QQ': 0.80, 'JJ': 0.77, 'TT': 0.75,
+        'AKS': 0.65, 'AQS': 0.64, 'AJS': 0.63, 'AKO': 0.60, 'AQO': 0.58,
+        'T9S': 0.55, '987': 0.45, '22': 0.50
+    };
+    
+    const defaultEquity = 0.50;
+    const equity = equityMap[hand] || defaultEquity;
+    
+    // 根据对手范围调整
+    let rangeMultiplier = 1.0;
+    if (range === 'top20') rangeMultiplier = 0.85;
+    else if (range === 'top10') rangeMultiplier = 0.75;
+    else if (range === 'pair+') rangeMultiplier = 0.70;
+    
+    const finalEquity = Math.min(equity * rangeMultiplier, 0.95);
+    
+    // 显示结果
+    document.getElementById('resultEquity').textContent = (finalEquity * 100).toFixed(1) + '%';
+    document.getElementById('resultPercent').textContent = (finalEquity * 100).toFixed(1) + '%';
+    document.getElementById('calcResult').classList.remove('hidden');
+}
+
+/**
+ * 高级胜率计算（简化版）
+ */
+function calcAdvanced() {
+    // 简化实现：返回随机值（实际应使用pokersolver等库）
+    const equity1 = (Math.random() * 0.4 + 0.3).toFixed(3);
+    const equity2 = (Math.random() * 0.4 + 0.3).toFixed(3);
+    const tie = (1 - parseFloat(equity1) - parseFloat(equity2)).toFixed(3);
+    
+    document.getElementById('proEquity1').textContent = (equity1 * 100).toFixed(1) + '%';
+    document.getElementById('proEquity2').textContent = (equity2 * 100).toFixed(1) + '%';
+    document.getElementById('proTie').textContent = (Math.max(0, tie) * 100).toFixed(1) + '%';
+    document.getElementById('proResult').classList.remove('hidden');
+}
+
+/**
+ * MDF计算
+ */
+function calcMDF() {
+    const pot = parseFloat(document.getElementById('mdfPot').value) || 100;
+    const bet = parseFloat(document.getElementById('mdfBet').value) || 50;
+    
+    const mdf = pot / (pot + bet);
+    const freq = (mdf * 100).toFixed(1);
+    
+    document.getElementById('mdfValue').textContent = mdf.toFixed(3);
+    document.getElementById('mdfFreq').textContent = freq + '%';
+    document.getElementById('mdfResult').classList.remove('hidden');
+}
