@@ -70,8 +70,11 @@ function initBattle() {
     
     console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
     
-    // 启动游戏循环
-    moveToNextPlayer();
+    // 启动游戏循环 - 直接开始UTG的行动
+    var firstPlayer = battleState.players[battleState.currentPlayerIndex];
+    if (firstPlayer && !firstPlayer.isHuman) {
+        setTimeout(function() { aiAction(battleState.currentPlayerIndex); }, 1000);
+    }
 }
 
 // 初始化牌组
