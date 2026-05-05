@@ -347,6 +347,7 @@
                     <div class="form-group">
                         <label>你的手牌</label>
                         <input type="text" id="calcHand" placeholder="如: AA, AKs, T9o" value="AA">
+                        <div class="input-hint">格式：对子AA | 同花AKs | 非同花AKo | 牌面Ah Ks (s黑桃/h红桃/d方片/c梅花，T=10,J=11,Q=12,K=13,A=1或14)</div>
                     </div>
                     <div class="form-group">
                         <label>对手范围</label>
@@ -407,15 +408,18 @@
                         <div class="form-group">
                             <label>手牌1</label>
                             <input type="text" id="proHand1" placeholder="如: Ah As">
+                            <div class="input-hint">格式：Ah Ks (A黑桃+K黑桃) | AKs (同花) | AKo (非同花) | AA (对子)</div>
                         </div>
                         <div class="form-group">
                             <label>手牌2</label>
                             <input type="text" id="proHand2" placeholder="如: Kc Kh">
+                            <div class="input-hint">格式同上，s黑桃/h红桃/d方片/c梅花，T=10,J=11,Q=12,K=13,A=1或14</div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>公共牌</label>
                         <input type="text" id="proBoard" placeholder="如: Ad 7c 2s">
+                        <div class="input-hint">格式：Ad (方片A) 7c (梅花7) 2s (黑桃2) Kh (红桃K)，最多5张，空格分隔</div>
                     </div>
                     <button class="calc-btn" onclick="calcAdvanced()">高级计算</button>
                     <div id="proResult" class="calc-result hidden">

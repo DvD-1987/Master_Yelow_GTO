@@ -770,3 +770,13 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
     color: var(--gold);
     margin-bottom: 1rem;
 }
+
+
+/* 输入框提示文字 */
+.input-hint {
+    font-size: 0.75rem;
+    color: var(--text-gray);
+    margin-top: 0.3rem;
+    line-height: 1.4;
+    opacity: 0.8;
+}
