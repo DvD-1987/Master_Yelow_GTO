@@ -67,7 +67,13 @@ function initBattle() {
     postBlinds();
     
     // 更新UI
-    updateBattleUI();
+    console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
+    
+    // 创建行动日志容器（确保一定存在）
+    createActionLogContainer();
+    
+    // 添加CSS动画
+    addBattleStyles();
     
     console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
     
@@ -182,6 +188,33 @@ function updateSeatsDisplay() {
         
         tableFelt.appendChild(seat);
     }
+    
+    // 高亮当前行动座位
+    highlightCurrentSeat();
+}
+
+function highlightCurrentSeat() {
+    // 移除所有座位的高亮
+    var allSeats = document.querySelectorAll('.seat');
+    for (var i = 0; i < allSeats.length; i++) {
+        allSeats[i].style.boxShadow = '';
+        allSeats[i].style.transform = 'translate(-50%, -50%)';
+        allSeats[i].style.zIndex = '';
+    }
+    
+    // 高亮当前行动座位
+    var currentSeat = document.querySelector('.seat.active');
+    if (currentSeat) {
+        currentSeat.style.boxShadow = '0 0 20px #ffd700, 0 0 40px #ffd700';
+        currentSeat.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        currentSeat.style.zIndex = '100';
+        
+        // 如果是AI，添加脉冲动画
+        var player = battleState.players[battleState.currentPlayerIndex];
+        if (player && !player.isHuman) {
+            currentSeat.style.animation = 'pulse 1s infinite';
+        }
+    }
 }
 
 function updatePlayerHand() {
@@ -261,6 +294,69 @@ function updateInfoBar() {
 }
 
 // ==================== 行动日志 ====================
+function createActionLogContainer() {
+    var logContainer = document.getElementById('actionLog');
+    if (logContainer) return; // 已存在
+    
+    logContainer = document.createElement('div');
+    logContainer.id = 'actionLog';
+    logContainer.style.cssText = 'margin:10px 0;padding:10px;background:#1a1a2e;border-radius:8px;max-height:200px;overflow-y:auto;font-size:14px;color:#ccc;width:100%;box-sizing:border-box;';
+    
+    // 尝试多个位置
+    var inserted = false;
+    
+    // 优先放到left-panel
+    var leftPanel = document.querySelector('.left-panel');
+    if (leftPanel) {
+        leftPanel.appendChild(logContainer);
+        inserted = true;
+    }
+    
+    // 如果left-panel不存在，放到table-felt下面
+    if (!inserted) {
+        var tableFelt = document.querySelector('.table-felt');
+        if (tableFelt && tableFelt.parentNode) {
+            tableFelt.parentNode.insertBefore(logContainer, tableFelt.nextSibling);
+            inserted = true;
+        }
+    }
+    
+    // 最后尝试放到gameScreen
+    if (!inserted) {
+        var gameScreen = document.getElementById('gameScreen');
+        if (gameScreen) {
+            gameScreen.appendChild(logContainer);
+        }
+    }
+    
+    console.log('[对战] 行动日志容器已创建', inserted ? '成功' : '失败');
+}
+
+function addBattleStyles() {
+    // 检查是否已添加
+    if (document.getElementById('battleStyles')) return;
+    
+    var style = document.createElement('style');
+    style.id = 'battleStyles';
+    style.textContent = `
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700; }
+            50% { box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700; }
+            100% { box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700; }
+        }
+        .seat.active {
+            border-color: #ffd700 !important;
+            z-index: 100 !important;
+        }
+        .seat.player-seat {
+            border-color: #00ff88 !important;
+            background: rgba(0,255,136,0.15) !important;
+        }
+    `;
+    document.head.appendChild(style);
+    console.log('[对战] CSS样式已添加');
+}
+
 function addActionLog(player, action, amount) {
     var actionText = '';
     switch(action) {
@@ -289,29 +385,18 @@ function addActionLog(player, action, amount) {
 function updateActionLog() {
     var logContainer = document.getElementById('actionLog');
     if (!logContainer) {
-        // 创建日志容器
-        logContainer = document.createElement('div');
-        logContainer.id = 'actionLog';
-        logContainer.style.cssText = 'margin-top:10px;padding:10px;background:#1a1a2e;border-radius:8px;max-height:200px;overflow-y:auto;font-size:14px;color:#ccc;';
-        var leftPanel = document.querySelector('.left-panel');
-        if (leftPanel) {
-            leftPanel.appendChild(logContainer);
-        } else {
-            // 如果找不到left-panel，放到table-felt旁边
-            var tableFelt = document.querySelector('.table-felt');
-            if (tableFelt && tableFelt.parentNode) {
-                tableFelt.parentNode.insertBefore(logContainer, tableFelt.nextSibling);
-            }
-        }
+        console.warn('[对战] 行动日志容器不存在');
+        return;
     }
-    if (!logContainer) return;
     
-    var html = '<div style="color:#ffd700;font-weight:bold;margin-bottom:5px;">📋 行动日志</div>';
+    var html = '<div style="color:#ffd700;font-weight:bold;margin-bottom:5px;font-size:16px;">📋 行动日志</div>';
     // 只显示最近20条
     var startIdx = Math.max(0, battleState.actionLog.length - 20);
     for (var i = startIdx; i < battleState.actionLog.length; i++) {
         var entry = battleState.actionLog[i];
-        html += '<div style="margin:2px 0;padding:2px 0;border-bottom:1px solid #333;">' +
+        var isPlayer = entry.playerName === '你';
+        var color = isPlayer ? '#00ff88' : '#ccc';
+        html += '<div style="margin:3px 0;padding:3px 0;border-bottom:1px solid #333;color:' + color + '">' +
                 '[' + entry.timestamp + '] ' + 
                 entry.playerName + ' (' + entry.position + ') ' + 
                 entry.actionText + 
