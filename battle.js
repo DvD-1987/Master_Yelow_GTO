@@ -18,7 +18,8 @@ var battleState = {
     currentPlayerIndex: 0, // 当前行动玩家索引
     dealerIndex: 0,      // 庄家位置
     playerSeatIndex: 0,   // 玩家座位（固定为0，即BTN位置）
-    gameOver: false
+    gameOver: false,
+    actionLog: []        // 行动日志
 };
 
 // 座位位置名称（6人桌）
@@ -254,6 +255,72 @@ function updateInfoBar() {
         turnIndicator.textContent = isPlayerTurn ? '🎯 轮到你了！' : '⏳ 等待 ' + currentPlayer.name + ' (' + currentPlayer.position + ') 行动...';
         turnIndicator.style.color = isPlayerTurn ? '#00ff88' : '#e94560';
     }
+    
+    // 更新行动日志显示
+    updateActionLog();
+}
+
+// ==================== 行动日志 ====================
+function addActionLog(player, action, amount) {
+    var actionText = '';
+    switch(action) {
+        case 'fold': actionText = '弃牌'; break;
+        case 'check': actionText = '过牌'; break;
+        case 'call': actionText = '跟注 ' + (amount/100).toFixed(1) + 'bb'; break;
+        case 'bet': actionText = '下注 ' + (amount/100).toFixed(1) + 'bb'; break;
+        case 'raise': actionText = '加注 ' + (amount/100).toFixed(1) + 'bb'; break;
+        case 'allin': actionText = 'ALL IN ' + (amount/100).toFixed(1) + 'bb'; break;
+        default: actionText = action;
+    }
+    
+    var logEntry = {
+        street: battleState.currentStreet,
+        position: player.position,
+        playerName: player.name,
+        action: action,
+        actionText: actionText,
+        amount: amount,
+        timestamp: new Date().toLocaleTimeString()
+    };
+    battleState.actionLog.push(logEntry);
+    console.log('[对战] ' + player.name + ' (' + player.position + ') ' + actionText);
+}
+
+function updateActionLog() {
+    var logContainer = document.getElementById('actionLog');
+    if (!logContainer) {
+        // 创建日志容器
+        logContainer = document.createElement('div');
+        logContainer.id = 'actionLog';
+        logContainer.style.cssText = 'margin-top:10px;padding:10px;background:#1a1a2e;border-radius:8px;max-height:200px;overflow-y:auto;font-size:14px;color:#ccc;';
+        var leftPanel = document.querySelector('.left-panel');
+        if (leftPanel) {
+            leftPanel.appendChild(logContainer);
+        } else {
+            // 如果找不到left-panel，放到table-felt旁边
+            var tableFelt = document.querySelector('.table-felt');
+            if (tableFelt && tableFelt.parentNode) {
+                tableFelt.parentNode.insertBefore(logContainer, tableFelt.nextSibling);
+            }
+        }
+    }
+    if (!logContainer) return;
+    
+    var html = '<div style="color:#ffd700;font-weight:bold;margin-bottom:5px;">📋 行动日志</div>';
+    // 只显示最近20条
+    var startIdx = Math.max(0, battleState.actionLog.length - 20);
+    for (var i = startIdx; i < battleState.actionLog.length; i++) {
+        var entry = battleState.actionLog[i];
+        html += '<div style="margin:2px 0;padding:2px 0;border-bottom:1px solid #333;">' +
+                '[' + entry.timestamp + '] ' + 
+                entry.playerName + ' (' + entry.position + ') ' + 
+                entry.actionText + 
+                ' <span style="color:#888;font-size:12px;">(' + getStreetNameChinese(entry.street) + ')</span>' +
+                '</div>';
+    }
+    logContainer.innerHTML = html;
+    // 滚动到底部
+    logContainer.scrollTop = logContainer.scrollHeight;
 }
 
 function updateActionButtons() {
@@ -294,10 +361,13 @@ function handlePlayerAction(action) {
     if (!player || player.isFolded || player.isAllIn) return;
     
     console.log('[对战] 玩家执行动作:', action);
+    var amount = 0;
     
     switch(action) {
         case 'fold':
             player.isFolded = true;
+            amount = 0;
+            addActionLog(player, 'fold', amount);
             console.log('[对战] 玩家弃牌');
             break;
         case 'check':
@@ -305,6 +375,8 @@ function handlePlayerAction(action) {
                 console.log('[对战] 不能check，需要跟注');
                 return;
             }
+            amount = 0;
+            addActionLog(player, 'check', amount);
             console.log('[对战] 玩家check');
             break;
         case 'call':
@@ -318,6 +390,8 @@ function handlePlayerAction(action) {
                 
                 if (player.chips === 0) player.isAllIn = true;
             }
+            amount = callAmount;
+            addActionLog(player, 'call', amount);
             console.log('[对战] 玩家跟注', callAmount);
             break;
         case 'bet':
@@ -335,6 +409,8 @@ function handlePlayerAction(action) {
                 
                 if (player.chips === 0) player.isAllIn = true;
             }
+            amount = additional;
+            addActionLog(player, action, amount);
             console.log('[对战] 玩家下注/加注', additional);
             break;
         case 'allin':
@@ -345,6 +421,8 @@ function handlePlayerAction(action) {
             battleState.pot += allinAmount;
             battleState.currentBet = Math.max(battleState.currentBet, player.currentBet);
             player.isAllIn = true;
+            amount = allinAmount;
+            addActionLog(player, 'allin', amount);
             console.log('[对战] 玩家ALL IN', allinAmount);
             break;
     }
@@ -359,64 +437,62 @@ function handlePlayerAction(action) {
 }
 
 function moveToNextPlayer() {
-    // 记录当前起始玩家（用于检测一轮是否结束）
-    var startPlayerIndex = battleState.currentPlayerIndex;
-    var nextIndex = (battleState.currentPlayerIndex + 1) % 6;
-    var loops = 0;
-    var foundNext = false;
+    // 先检查一轮是否结束
+    if (isRoundComplete()) {
+        console.log('[对战] 一轮结束，进入下一阶段');
+        nextStreet();
+        return;
+    }
     
     // 找到下一个未弃牌且未ALL IN的玩家
+    var nextIndex = (battleState.currentPlayerIndex + 1) % 6;
+    var loops = 0;
+    var found = false;
+    
     while (loops < 6) {
-        var nextPlayer = battleState.players[nextIndex];
-        if (!nextPlayer.isFolded && !nextPlayer.isAllIn) {
-            // 检查是否回到了起始点（一轮结束）
-            if (nextIndex === startPlayerIndex) {
-                // 一轮结束，进入下一阶段
-                nextStreet();
-                return;
-            }
-            battleState.currentPlayerIndex = nextIndex;
-            foundNext = true;
-            
-            // 如果是AI，执行AI动作
-            if (!nextPlayer.isHuman) {
-                setTimeout(function() { aiAction(nextIndex); }, 1000);
-            }
+        var p = battleState.players[nextIndex];
+        if (!p.isFolded && !p.isAllIn) {
+            found = true;
             break;
         }
         nextIndex = (nextIndex + 1) % 6;
         loops++;
     }
     
-    // 如果没找到下一个玩家（可能所有人都弃牌或ALL IN）
-    if (!foundNext) {
-        // 检查游戏是否结束
+    if (!found) {
+        // 没有找到下一个玩家，检查游戏是否结束
+        console.log('[对战] 未找到下一个玩家，检查游戏状态');
         checkBattleEnd();
         if (!battleState.gameOver) {
-            // 进入下一阶段
+            // 如果游戏没有结束，可能应该进入下一阶段
             nextStreet();
         }
         return;
     }
     
+    battleState.currentPlayerIndex = nextIndex;
     updateBattleUI();
+    
+    var nextPlayer = battleState.players[nextIndex];
+    if (nextPlayer && !nextPlayer.isHuman) {
+        // 使用闭包保存nextIndex，避免setTimeout中的闭包问题
+        (function(idx) {
+            setTimeout(function() { aiAction(idx); }, 1000);
+        })(nextIndex);
+    }
 }
 
-// 检查一轮是否真的结束（防止无限循环）
+// 检查一轮是否结束：所有未弃牌且未ALL IN的玩家的下注额都等于currentBet
 function isRoundComplete() {
-    // 如果所有未弃牌玩家都下注到相同金额，返回true
-    var activePlayers = 0;
-    var allMatched = true;
     for (var i = 0; i < battleState.players.length; i++) {
         var p = battleState.players[i];
-        if (!p.isFolded) {
-            activePlayers++;
-            if (p.currentBet !== battleState.currentBet && !p.isAllIn) {
-                allMatched = false;
+        if (!p.isFolded && !p.isAllIn) {
+            if (p.currentBet !== battleState.currentBet) {
+                return false;
             }
         }
     }
-    return activePlayers <= 1 || allMatched;
+    return true;
 }
 
 // 进入下一阶段
@@ -528,25 +604,26 @@ function aiAction(playerIndex) {
     
     console.log('[对战] AI', playerIndex, '(', player.position, ') 执行动作：', action, '筹码:', player.chips/100, 'bb');
     
-    // 执行动作
+    // 执行动作（executeAction内部会记录日志和调用moveToNextPlayer）
     executeAction(playerIndex, action);
-    
-    // 移动到下一个玩家
-    if (!battleState.gameOver) {
-        moveToNextPlayer();
-    }
 }
 
 function executeAction(playerIndex, action) {
     var player = battleState.players[playerIndex];
     if (!player || player.isFolded || player.isAllIn) return;
     
+    var amount = 0;
+    
     switch(action) {
         case 'fold':
             player.isFolded = true;
+            amount = 0;
+            addActionLog(player, 'fold', amount);
             break;
         case 'check':
             if (battleState.currentBet > player.currentBet) return;
+            amount = 0;
+            addActionLog(player, 'check', amount);
             break;
         case 'call':
             var callAmount = battleState.currentBet - player.currentBet;
@@ -558,6 +635,8 @@ function executeAction(playerIndex, action) {
                 battleState.pot += actualCall;
                 if (player.chips === 0) player.isAllIn = true;
             }
+            amount = callAmount;
+            addActionLog(player, 'call', amount);
             break;
         case 'bet':
         case 'raise':
@@ -572,6 +651,8 @@ function executeAction(playerIndex, action) {
                 battleState.currentBet = actualBet;
                 if (player.chips === 0) player.isAllIn = true;
             }
+            amount = additional;
+            addActionLog(player, action, amount);
             break;
         case 'allin':
             var allinAmount = player.chips;
@@ -581,6 +662,8 @@ function executeAction(playerIndex, action) {
             battleState.pot += allinAmount;
             battleState.currentBet = Math.max(battleState.currentBet, player.currentBet);
             player.isAllIn = true;
+            amount = allinAmount;
+            addActionLog(player, 'allin', amount);
             break;
     }
     
