@@ -66,8 +66,14 @@ function initBattle() {
     // 收取盲注
     postBlinds();
     
+    // 创建行动日志容器
+    createActionLogContainer();
+    
     // 更新UI
     updateBattleUI();
+    
+    // 添加CSS动画
+    addBattleStyles();
     
     console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
     
@@ -163,17 +169,6 @@ function updateSeatsDisplay() {
         return;
     }
     
-    // 6个座位平均分布在椭圆上（每60度一个）
-    // 玩家座位（BTN）在底部中间（6点钟位置），顺时针排列
-    var seatAngles = [
-        270, // BTN (玩家) - 底部中间
-        330, // SB - 右下
-        30,  // BB - 右上
-        90,  // UTG - 顶部中间
-        150, // MP - 左上
-        210  // CO - 左下
-    ];
-    
     // 创建6个座位
     for (var j = 0; j < battleState.players.length; j++) {
         var player = battleState.players[j];
@@ -186,14 +181,6 @@ function updateSeatsDisplay() {
         seat.className = className;
         seat.setAttribute('data-position', player.position);
         
-        // 计算座位在椭圆上的位置
-        var angle = seatAngles[j] * Math.PI / 180;
-        var left = 50 + 35 * Math.cos(angle); // 椭圆水平半径35%
-        var top = 50 + 40 * Math.sin(angle);  // 椭圆垂直半径40%
-        
-        seat.style.left = left + '%';
-        seat.style.top = top + '%';
-        
         seat.innerHTML = '<div class="seat-name">' + player.name + '</div>' +
                        '<div class="seat-chips">' + (player.chips / 100).toFixed(1) + 'bb</div>' +
                        (player.isFolded ? '<div class="seat-status">已弃牌</div>' : '') +
@@ -201,6 +188,14 @@ function updateSeatsDisplay() {
         
         tableFelt.appendChild(seat);
     }
+    
+    // 高亮当前行动座位（只用CSS，不用JS设置样式）
+    // CSS中.seat.active已定义好样式
+}
+
+function highlightCurrentSeat() {
+    // 不需要这个函数了，CSS的.seat.active会自动处理
+    // 保留空函数避免报错
 }
 
 function updatePlayerHand() {
@@ -280,6 +275,63 @@ function updateInfoBar() {
 }
 
 // ==================== 行动日志 ====================
+function createActionLogContainer() {
+    var logContainer = document.getElementById('actionLog');
+    if (logContainer) return; // 已存在
+    
+    logContainer = document.createElement('div');
+    logContainer.id = 'actionLog';
+    logContainer.style.cssText = 'margin:10px 0 15px 0;padding:10px 12px;background:#0d1117;border-radius:8px;height:400px;overflow-y:auto;font-size:13px;color:#c9d1d9;width:100%;box-sizing:border-box;border:1px solid #30363d;line-height:1.5;display:block !important;position:relative;z-index:9999;font-family:monospace;';
+
+    // 放到右侧边栏最顶部
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        // 确保sidebar可见
+        sidebar.style.display = 'flex';
+        // 在边栏最顶部插入日志窗口
+        if (sidebar.firstChild) {
+            sidebar.insertBefore(logContainer, sidebar.firstChild);
+        } else {
+            sidebar.appendChild(logContainer);
+        }
+        console.log('[对战] 日志窗口已插入sidebar');
+    } else {
+        // fallback: 放到gameScreen
+        var gameScreen = document.getElementById('gameScreen');
+        if (gameScreen) {
+            gameScreen.appendChild(logContainer);
+        }
+        console.log('[对战] 日志窗口插入fallback位置');
+    }
+    
+    console.log('[对战] 行动日志容器已创建', inserted ? '成功' : '失败');
+}
+
+function addBattleStyles() {
+    // 检查是否已添加
+    if (document.getElementById('battleStyles')) return;
+    
+    var style = document.createElement('style');
+    style.id = 'battleStyles';
+    style.textContent = `
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700; }
+            50% { box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700; }
+            100% { box-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700; }
+        }
+        .seat.active {
+            border-color: #ffd700 !important;
+            z-index: 100 !important;
+        }
+        .seat.player-seat {
+            border-color: #00ff88 !important;
+            background: rgba(0,255,136,0.15) !important;
+        }
+    `;
+    document.head.appendChild(style);
+    console.log('[对战] CSS样式已添加');
+}
+
 function addActionLog(player, action, amount) {
     var actionText = '';
     switch(action) {
@@ -308,31 +360,18 @@ function addActionLog(player, action, amount) {
 function updateActionLog() {
     var logContainer = document.getElementById('actionLog');
     if (!logContainer) {
-        // 创建日志容器，放到左侧面板
-        logContainer = document.createElement('div');
-        logContainer.id = 'actionLog';
-        logContainer.style.cssText = 'margin-top:15px;padding:12px;background:#1a1a2e;border-radius:8px;height:350px;overflow-y:auto;font-size:13px;color:#ddd;width:100%;box-sizing:border-box;border:1px solid #333;line-height:1.5;';
-        
-        // 放到左侧面板，在player-section前面
-        var leftPanel = document.querySelector('.left-panel');
-        var playerSection = document.querySelector('.player-section');
-        if (leftPanel && playerSection) {
-            leftPanel.insertBefore(logContainer, playerSection);
-        } else if (leftPanel) {
-            leftPanel.appendChild(logContainer);
-        }
+        console.warn('[对战] 行动日志容器不存在');
+        return;
     }
     
-    if (!logContainer) return;
-    
-    var html = '<div style="color:#ffd700;font-weight:bold;margin-bottom:8px;font-size:15px;">📋 行动日志</div>';
+    var html = '<div style="color:#ffd700;font-weight:bold;margin-bottom:5px;font-size:16px;">📋 行动日志</div>';
     // 只显示最近20条
     var startIdx = Math.max(0, battleState.actionLog.length - 20);
     for (var i = startIdx; i < battleState.actionLog.length; i++) {
         var entry = battleState.actionLog[i];
         var isPlayer = entry.playerName === '你';
         var color = isPlayer ? '#00ff88' : '#ccc';
-        html += '<div style="margin:4px 0;padding:4px 0;border-bottom:1px solid #333;color:' + color + '">' +
+        html += '<div style="margin:3px 0;padding:3px 0;border-bottom:1px solid #333;color:' + color + '">' +
                 '[' + entry.timestamp + '] ' + 
                 entry.playerName + ' (' + entry.position + ') ' + 
                 entry.actionText + 
@@ -568,7 +607,7 @@ function nextStreet() {
         loops++;
     }
     
-    // 检查是否所有未弃牌玩家都ALL IN了
+    // 如果所有未弃牌玩家都ALL IN了，直接发完剩余牌
     var activePlayers = battleState.players.filter(function(p) { return !p.isFolded; });
     var allAllIn = activePlayers.length > 0 && activePlayers.every(function(p) { return p.isAllIn; });
     
@@ -820,14 +859,6 @@ window.startBattle = function() {
         sidebar.style.display = 'flex';
         sidebar.style.width = '320px';
     }
-    
-    // 隐藏原来的对手信息（用座位代替）
-    var opponentInfo = document.getElementById('opponentInfo');
-    if (opponentInfo) opponentInfo.style.display = 'none';
-    
-    // 隐藏middle-panel（把动作按钮移到left-panel底部）
-    var middlePanel = document.querySelector('.middle-panel');
-    if (middlePanel) middlePanel.style.display = 'none';
     
     // 把动作按钮移到left-panel底部
     var leftPanel = document.querySelector('.left-panel');
