@@ -669,11 +669,21 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .form-group select {
     width: 100%;
     padding: 0.6rem;
-    background: rgba(255,255,255,0.05);
+    background: rgba(30,30,40,0.9);
     border: 1px solid rgba(255,215,0,0.3);
     border-radius: 6px;
     color: var(--text-light);
     font-size: 0.9rem;
+}
+
+.form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%23FFD700' d='M6 8L1 3h10z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    padding-right: 2rem;
 }
 
 .form-group input:focus,
@@ -779,4 +789,16 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
     margin-top: 0.3rem;
     line-height: 1.4;
     opacity: 0.8;
+}
+
+/* 修复下拉框在暗色主题下的显示 */
+.form-group select option {
+    background: #1e1e28;
+    color: #e2e8f0;
+}
+
+.form-group select option:checked,
+.form-group select option:hover {
+    background: #FFD700;
+    color: #000;
 }
