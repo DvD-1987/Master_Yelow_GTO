@@ -1,0 +1,391 @@
+/**
+ * GTO Poker Trainer - Scenario Database
+ * 
+ * 格式说明：每条情境包含完整GTO分析数据
+ * 新增情境只需在此文件追加，不需要修改任何逻辑代码
+ */
+
+const SCENARIOS = [
+    // ==================== 初级情境 ====================
+    {
+        id: 1,
+        difficulty: 'beginner',
+        street: 'preflop',
+        position: 'BTN',
+        tableSize: 8,
+        hand: ['A♠', 'K♠'],
+        board: [],
+        potSize: 1.5,
+        effectiveStack: 100,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'raise',
+        actionFrequency: 1.0,
+        ev: 0.85,
+        potOdds: 0,
+        mdf: 0,
+        explanation: 'AKs是顶级起手牌，在按钮位应该100%率先加注。',
+        reasoning: '位置优势+牌力强。AKs在对抗大多数范围都有约52-54%的胜率，率先加注可以建立底池，并在翻牌后利用位置优势。在按钮位，面对大小盲的宽范围，AKs的价值最大化。\n\n翻牌后如果击中A或K，可以继续获取价值；如果没击中，也有足够多的胜率继续争夺底池。AKs的阻断牌效应也很重要——你持有AK， opponent持有AA或KK的组合会减少。\n\n筹码深度100bb时，AKs的3-bet vs 率先加注的EV差别不大，但率先加注可以给对手施加更多压力。',
+        equity: '52-54%',
+        opponentRange: {
+            value: 'TT+, AK, AQs+',
+            bluff: 'KQs, JTs, 98s, AJs'
+        },
+        teaching: [
+            '位置优势：按钮位有最后行动优势，可以观察所有对手的行动再做决策',
+            '起手牌强度：AK是翻前最强的手牌组合之一',
+            '阻断牌效应：持有AK减少了对手持有AA/KK的组合'
+        ],
+        commonMistakes: [
+            '错误：平跟溜入——失去了建立底池和利用位置的机会',
+            '错误：过度3-bet——在按钮位率先加注已经足够强势'
+        ],
+        tags: ['preflop', 'open', 'BTN', 'AK', 'suited', 'position']
+    },
+    {
+        id: 2,
+        difficulty: 'beginner',
+        street: 'preflop',
+        position: 'BB',
+        tableSize: 8,
+        hand: ['7♦', '7♥'],
+        board: [],
+        potSize: 4.5,
+        effectiveStack: 95.5,
+        currentBet: 3,
+        actionToPlayer: 'BTN open to 3bb',
+        optimalAction: 'call',
+        actionFrequency: 0.92,
+        ev: 0.35,
+        potOdds: 2.5,
+        mdf: 40,
+        explanation: '中口袋对77在对抗开放加注时应该几乎100%跟注。',
+        reasoning: '77对抗典型的BTN开放加注范围（约40%的组合）大约有52%的胜率。底池赔率是2.5:1，只需要28.6%的胜率就跟注就是+EV的。\n\n翻牌前跟注比3-bet更好，因为3-bet会让对手弃掉你想要对抗的更弱牌。77的目标是击中暗三set，这在翻牌后可以获取巨大价值。\n\n赔率计算：跟注3bb有机会赢得4.5bb+3bb=7.5bb，底池赔率=7.5:3=2.5:1，需要28.6%的胜率。而77对抗BTN范围约52%，远高于所需胜率。',
+        equity: '52%',
+        opponentRange: {
+            value: 'TT+, AK, AQs+',
+            bluff: 'KQs, JTs, 98s, AJs'
+        },
+        teaching: [
+            '底池赔率：计算跟注是否+EV的核心工具',
+            'Set mining：中口袋对的价值来自击中暗三后的价值获取',
+            '位置考虑：大盲位防守需要合理的赔率'
+        ],
+        commonMistakes: [
+            '错误：3-bet——会让弱牌弃掉，减少了可以赢的组合',
+            '错误：弃牌——77有足够胜率防守'
+        ],
+        tags: ['preflop', 'defend', 'BB', '77', 'setmine', 'potodds']
+    },
+    {
+        id: 3,
+        difficulty: 'beginner',
+        street: 'flop',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['Q♥', 'J♠'],
+        board: ['K♠', '7♦', '2♣'],
+        potSize: 9,
+        effectiveStack: 91,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'check',
+        actionFrequency: 0.65,
+        ev: 0.12,
+        potOdds: 0,
+        mdf: 0,
+        explanation: 'QJ在K72这个牌面通常应该过牌而不是下注。',
+        reasoning: '这个牌面高度有利于翻前加注者（假设你是BTN面对BB防守）。K72是A-high牌面，你的QJ错过了这个牌面，只有后门顺和后门同花听牌。\n\nGTO策略中，在这个位置通常65%过牌，35%下注。如果你下注被跟注后你会很困难，因为你只有后门顺和后门同花，在不利位置很难继续。\n\n过牌的好处是你可以用更强的牌（AK, KQ, AA）在这里下注，构建一个平衡的范围。你的QJ在这里属于"在边缘"的牌，不应该激进。',
+        equity: '38%',
+        opponentRange: {
+            value: 'KK+, AK, KQs, AA',
+            bluff: 'AQ, AJs, T9s'
+        },
+        teaching: [
+            '牌面评估：K72牌面有利好翻前加注者',
+            '范围平衡：强牌下注，边缘牌过牌',
+            '后门牌价值：QJ有后门顺和后门同花，不是完全空气'
+        ],
+        commonMistakes: [
+            '错误：持续下注——被跟注后处境困难',
+            '错误：认为所有对子都要下注——牌面和位置都要考虑'
+        ],
+        tags: ['flop', 'check', 'IP', 'QJ', 'boardtexture', 'balance']
+    },
+    {
+        id: 10,
+        difficulty: 'beginner',
+        street: 'preflop',
+        position: 'UTG',
+        tableSize: 8,
+        hand: ['Q♠', 'Q♦'],
+        board: [],
+        potSize: 1.5,
+        effectiveStack: 98.5,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'raise',
+        actionFrequency: 1.0,
+        ev: 0.72,
+        potOdds: 0,
+        mdf: 0,
+        explanation: '口袋对QQ在UTG位置应该100%率先加注。',
+        reasoning: 'QQ是第3强的起手牌，在UTG位置仍然应该100%开放加注。你不想跟注，因为你会面对多个对手，这降低了你的胜率。\n\n3-bet也是一个选项，但GTO策略中UTG开放加注更好，因为你可以构建一个平衡的开放加注范围。开放加注2.5-3bb。\n\nUTG开池需要更强的范围，因为你身后有7个对手。你需要能够承受被多个对手跟注后的翻牌圈压力。QQ在UTG开池后，如果被3-bet可以考虑4-bet或跟注看翻牌。',
+        equity: '58%',
+        opponentRange: {
+            value: null,
+            bluff: null
+        },
+        teaching: [
+            '位置压力：UTG开池需要最强范围',
+            'QQ的强度：第三强的起手牌，任何位置都要激进',
+            '开池尺度：2.5-3bb是标准开池大小'
+        ],
+        commonMistakes: [
+            '错误：平跟——面对多人底池胜率下降',
+            '错误：开池太小或太大——2.5-3bb是标准'
+        ],
+        tags: ['preflop', 'open', 'UTG', 'QQ', 'pocketpair']
+    },
+
+    // ==================== 中级情境 ====================
+    {
+        id: 4,
+        difficulty: 'intermediate',
+        street: 'flop',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['A♠', 'K♦'],
+        board: ['J♥', '7♣', '3♦'],
+        potSize: 18,
+        effectiveStack: 82,
+        currentBet: 10.8,
+        actionToPlayer: 'BB bet 60% pot',
+        optimalAction: 'raise',
+        actionFrequency: 0.45,
+        ev: 0.68,
+        potOdds: 2.67,
+        mdf: 62.5,
+        explanation: 'AKo在J73面对60% pot下注应该混合加注，频率约45%。',
+        reasoning: 'AKo在这个牌面是一个加注候选。你拥有对A的阻断牌（blocker），这减少了对手拥有AA的组合。同时，你有两张高牌，对抗Kx, Qx, Tx等有很多胜率。\n\nGTO策略中，你加注的范围包括价值牌（AA, KQ, AJ）和半诈唬牌（Ax同花听牌）。AKo处于价值下注和纯跟注之间的中间位置，因此进行混合。\n\n计算：你需要约38%的胜率来跟注（1/(2.67+1)），而AKo对抗对手范围约45%胜率。加注的好处是可以直接拿下底池，或者在对手弃牌时获取额外价值。\n\nMDF=62.5%意味着对手需要用62.5%的范围防守来防止你过度诈唬。',
+        equity: '45%',
+        opponentRange: {
+            value: 'JJ+, 77, AJ, KJ',
+            bluff: 'A2s-A5s, T9s, 98s, 76s'
+        },
+        teaching: [
+            'MDF最小防守频率：对手需要防守的比例防止被剥削',
+            '阻断牌效应：持有A减少了对手持有AA/AK的组合',
+            '混合策略：不是所有AK都要用同样的动作'
+        ],
+        commonMistakes: [
+            '错误：总是跟注——失去了用AK加注获取价值的机会',
+            '错误：总是加注——破坏了范围平衡，被对手读懂'
+        ],
+        tags: ['flop', 'raise', 'IP', 'AK', 'MDF', 'mixedstrategy']
+    },
+    {
+        id: 5,
+        difficulty: 'intermediate',
+        street: 'turn',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['9♦', '8♦'],
+        board: ['J♠', '7♣', '3♦', 'K♥'],
+        potSize: 27,
+        effectiveStack: 73,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'bet',
+        actionFrequency: 0.75,
+        ev: 0.92,
+        potOdds: 0,
+        mdf: 0,
+        explanation: '98s在J73K这个牌面应该下注75%的pot。',
+        reasoning: '转牌K改变了牌面结构，现在你拥有顺子（5-6-7-8-9或者7-8-9-T）。这是一个强坚果牌，你需要构建价值下注范围。\n\n在这个牌面，GTO策略通常下注75% pot，频率约75%。你的下注范围包括：价值牌（顺子、两对、顶对K）、半诈唬牌（同花听牌、卡顺）。98s作为坚果牌，应该100%下注获取价值。\n\n注意：对手可能会用AK/KK/AA在这里跟注或者加注。如果被加注，你需要评估是否继续。你的顺子是相对坚果（相对KK/AK的牌面），可以考虑跟注看河牌。\n\n同花听牌也在这里击中——但98s是顺子，比任何同花都强。',
+        equity: '68%',
+        opponentRange: {
+            value: 'KJ, KQ, AA, KK, 99, TT',
+            bluff: 'AJ, QJ, 同花听牌, 65s'
+        },
+        teaching: [
+            '坚果优势：98s在K高牌面是超强牌',
+            '价值下注：用强牌获取最大价值',
+            '牌面分析：K改变了对手的范围'
+        ],
+        commonMistakes: [
+            '错误：过牌——没有最大化价值',
+            '错误：过牌等待——给了对手免费看牌的机会'
+        ],
+        tags: ['turn', 'bet', 'IP', '98s', 'nuts', 'valubet']
+    },
+    {
+        id: 6,
+        difficulty: 'intermediate',
+        street: 'river',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['Q♠', 'Q♦'],
+        board: ['A♥', 'K♣', '7♠', '2♦', '9♥'],
+        potSize: 54,
+        effectiveStack: 46,
+        currentBet: 32.4,
+        actionToPlayer: 'BB bets 60% pot',
+        optimalAction: 'call',
+        actionFrequency: 0.58,
+        ev: 0.45,
+        potOdds: 2.67,
+        mdf: 62.5,
+        explanation: 'QQ在AK729面对60% pot下注应该跟注，频率约58%。',
+        reasoning: '这个牌面对下注者非常友好（A高牌面），但QQ是一个强的跟注牌。底池赔率是2.67:1，需要约27%的胜率。你需要计算MDF（最小防守频率）= Pot/(Pot+Bet) = 54/(54+32.4) = 62.5%。这意味着你需要用62.5%的范围防守。\n\n你的范围中，AA, KK, AQ, KQ是价值跟注，QQ处于中间，因此进行混合跟注。\n\n对抗对手的范围：对手会用AA, KK, AK, A9s价值下注，AQ, KQ, JQ和同花诈唬。QQ对抗这个范围约35%胜率，高于跟注需要的27%。\n\n弃牌的情况：如果你确定对手只下注AA/KK/AK（超过他范围的价值下注），QQ应该弃牌。但通常对手有足够的诈唬范围，所以跟注是正确的。',
+        equity: '35%',
+        opponentRange: {
+            value: 'AA, KK, AK, A9s',
+            bluff: 'AQ, KQ, JQ, KJs, QJs, 同花诈唬'
+        },
+        teaching: [
+            'MDF应用：底池赔率计算和GTO防守频率',
+            '河牌决策：评估对手下注范围和你的牌力',
+            '混合策略：QQ不是100%跟注，也不是100%弃牌'
+        ],
+        commonMistakes: [
+            '错误：无脑弃牌——没有计算赔率和范围',
+            '错误：无脑跟注——没有考虑对手是否有足够的诈唬'
+        ],
+        tags: ['river', 'call', 'IP', 'QQ', 'MDF', 'riverdecision']
+    },
+
+    // ==================== 高级情境 ====================
+    {
+        id: 7,
+        difficulty: 'advanced',
+        street: 'flop',
+        position: 'OOP',
+        tableSize: 8,
+        hand: ['A♥', '5♥'],
+        board: ['K♠', '8♥', '2♥'],
+        potSize: 15,
+        effectiveStack: 85,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'bet',
+        actionFrequency: 0.85,
+        ev: 0.58,
+        potOdds: 0,
+        mdf: 0,
+        explanation: 'A5s在K82同花牌面应该激进下注，频率约85%。',
+        reasoning: '这是一个有趣的平衡牌面。你拥有同花听牌+阻断牌（A）。在不利位置（OOP），GTO策略通常选择高频率下注来避免被剥削。\n\n这个牌面，你下注的范围包括：价值牌（AA, KK, K8, K2, 88, 22）、半诈唬牌（同花听牌、A高卡顺）。A5s是完美的半诈唬牌：你有18%的胜率改进到同花，同时你拥有A的阻断牌，这让对手的AK组合减少。\n\n下注尺度选择33% pot。这个尺度足够小让弱牌跟注，又足够大让强牌感到压力。\n\n在不利位置高频率下注的原因是：如果你总是过牌，对手可以用很宽的范围下注来剥削你。你需要用你的强听牌和价值牌构建一个下注范围。',
+        equity: '28%',
+        opponentRange: {
+            value: 'KK+, AK, KQ, KJ',
+            bluff: 'Axs, 同花听牌, 76s'
+        },
+        teaching: [
+            'OOP策略：在不利位置需要更激进的下注策略',
+            '半诈唬：用有改进潜力的牌下注，同时有直接获胜的可能',
+            '阻断牌价值：A5s的A减少了对子AK的组合'
+        ],
+        commonMistakes: [
+            '错误：总是过牌——给了对手剥削的机会',
+            '错误：下注太大——应该用33% pot平衡价值牌和诈唬'
+        ],
+        tags: ['flop', 'bet', 'OOP', 'A5s', 'flushdraw', 'semi-bluff']
+    },
+    {
+        id: 8,
+        difficulty: 'advanced',
+        street: 'turn',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['T♦', '9♦'],
+        board: ['J♣', '7♦', '4♠', 'A♥'],
+        potSize: 24,
+        effectiveStack: 76,
+        currentBet: 19.2,
+        actionToPlayer: 'BB bets 80% pot',
+        optimalAction: 'fold',
+        actionFrequency: 0.92,
+        ev: -0.35,
+        potOdds: 2.25,
+        mdf: 55.6,
+        explanation: 'T9o在J74A面对80% pot下注应该弃牌，频率约92%。',
+        reasoning: '转牌A是一个高风险牌，对手下注80% pot表示强牌范围。T9o只有8张outs（5,6,8,Q），而且很多outs会让对手成牌（6让对手成顺，8让对手成两对）。\n\n你需要约31%的胜率来跟注（1/(2.25+1)），而考虑到这个下注尺度代表强范围，你的实际胜率远低于此。GTO策略中，你应该用强牌（AA, AJ, KQ）和强听牌（同花听牌、卡顺）防守，T9o太弱了。\n\n注意：对手的下注尺度本身就是信息。80% pot是一个非常大的下注，通常代表强牌或者大诈唬。但对抗一个未知对手，我们假设他有合理的范围。\n\n弃牌后：你可以等待下一手牌，或者如果对手经常在这里诈唬，你可以在以后调整策略。',
+        equity: '18%',
+        opponentRange: {
+            value: 'AA, AJ, AQs, AK',
+            bluff: '同花听牌, AQ, KQ'
+        },
+        teaching: [
+            '下注尺度信息：80% pot通常代表强牌范围',
+            'Outs质量：不是所有outs都是干净的',
+            '弃牌也是GTO：不是所有牌都要打到河牌'
+        ],
+        commonMistakes: [
+            '错误：跟注—— outs不够干净，赔率不够',
+            '错误：认为总能找到outs——对手范围很强'
+        ],
+        tags: ['turn', 'fold', 'IP', 'T9o', 'overcard', 'foldequity']
+    },
+    {
+        id: 9,
+        difficulty: 'advanced',
+        street: 'river',
+        position: 'IP',
+        tableSize: 8,
+        hand: ['J♠', 'J♥'],
+        board: ['A♦', 'K♣', '7♠', '2♥', '5♠'],
+        potSize: 72,
+        effectiveStack: 28,
+        currentBet: 0,
+        actionToPlayer: '',
+        optimalAction: 'check',
+        actionFrequency: 0.70,
+        ev: 0.08,
+        potOdds: 0,
+        mdf: 0,
+        explanation: 'JJ在AK725这个河牌应该过牌，频率约70%。',
+        reasoning: '这是河牌前的最后一个决策点。你持有JJ，在AK725这个牌面，你落后于AA, KK, AK, AJ, KQ。你需要思考你的价值下注范围和诈唬范围。\n\n价值下注范围应该是AA, KK, AK（如果之前行动支持），诈唬范围需要是阻挡强牌的组合。JJ在这个牌面是一个过牌候选，因为它的价值介于跟注和弃牌之间。\n\nGTO策略中，你70%过牌，30%下诈唬。JJ过牌的原因：\n1. 打不过对手价值下注范围的大多数牌\n2. 对手可能在这里下注，获取免费信息\n3. 如果对手下注，你可以评估是否跟注\n\n如果对手过牌，你可以考虑是否下注获取薄价值。但在这个牌面，JJ通常不是最好的下注选择。',
+        equity: '25%',
+        opponentRange: {
+            value: 'AA, KK, AK',
+            bluff: 'AQ, KQ, 阻挡组合'
+        },
+        teaching: [
+            '河牌范围构建：决定哪些牌价值下注，哪些牌过牌',
+            '阻挡牌效应：TT/99等可以阻断AA/KK',
+            '薄价值：JJ在某些牌面可以下注获取小价值，但AK725不是这种牌面'
+        ],
+        commonMistakes: [
+            '错误：总是下注——破坏了范围平衡',
+            '错误：总是过牌——在某些牌面可以获取薄价值'
+        ],
+        tags: ['river', 'check', 'IP', 'JJ', 'riverplan', 'rangeconstruction']
+    }
+];
+
+// Fisher-Yates 洗牌算法
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// 根据难度筛选情境
+function getScenariosByDifficulty(difficulty) {
+    return SCENARIOS.filter(s => s.difficulty === difficulty);
+}
+
+// 获取随机情境（洗牌后）
+function getRandomScenario(difficulty) {
+    const filtered = getScenariosByDifficulty(difficulty);
+    const shuffled = shuffleArray(filtered);
+    return shuffled[0];
+}
+
+// 导出
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SCENARIOS, shuffleArray, getScenariosByDifficulty, getRandomScenario };
+}
