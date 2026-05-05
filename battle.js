@@ -393,6 +393,11 @@ function aiAction(playerIndex) {
     
     // 执行动作
     executeAction(playerIndex, randomAction);
+    
+    // 移动到下一个玩家
+    if (!battleState.gameOver) {
+        moveToNextPlayer();
+    }
 }
 
 function executeAction(playerIndex, action) {
