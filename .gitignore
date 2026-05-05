@@ -23,7 +23,6 @@ node_modules/
 *.py
 *.txt
 *.bak
-*.log
 .workbuddy/
 scenarios.js
 scenarios_temp.json
