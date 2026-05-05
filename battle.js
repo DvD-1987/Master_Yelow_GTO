@@ -844,23 +844,18 @@ window.startBattle = function() {
     var difficultySelector = document.querySelector('.difficulty-selector');
     if (difficultySelector) difficultySelector.style.display = 'none';
     
-    // 隐藏练习模式的所有元素
+    // 隐藏练习模式的所有元素（但不隐藏整个sidebar）
     var practiceElements = document.querySelectorAll('.sidebar-card, .feedback-panel, .reasoning-section, .stats-row, .context-grid, .teaching-section, .mistakes-section, .opponent-range-section');
     for (var i = 0; i < practiceElements.length; i++) {
         practiceElements[i].style.display = 'none';
     }
     
-    // 隐藏原来的对手信息（用座位代替）
-    var opponentInfo = document.getElementById('opponentInfo');
-    if (opponentInfo) opponentInfo.style.display = 'none';
-    
-    // 隐藏middle-panel（把动作按钮移到left-panel底部）
-    var middlePanel = document.querySelector('.middle-panel');
-    if (middlePanel) middlePanel.style.display = 'none';
-    
-    // 隐藏侧边栏（练习模式的）
+    // 确保sidebar显示（用于放日志窗口）
     var sidebar = document.querySelector('.sidebar');
-    if (sidebar) sidebar.style.display = 'none';
+    if (sidebar) {
+        sidebar.style.display = 'flex';
+        sidebar.style.width = '320px';
+    }
     
     // 把动作按钮移到left-panel底部
     var leftPanel = document.querySelector('.left-panel');
