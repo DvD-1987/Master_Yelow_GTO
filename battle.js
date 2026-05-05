@@ -278,19 +278,27 @@ function createActionLogContainer() {
     
     logContainer = document.createElement('div');
     logContainer.id = 'actionLog';
-    logContainer.style.cssText = 'margin:10px 0;padding:10px 12px;background:#1a1a2e;border-radius:8px;height:450px;overflow-y:auto;font-size:14px;color:#eee;width:280px;box-sizing:border-box;border:1px solid #444;line-height:1.6;';
+    logContainer.style.cssText = 'margin:10px 0 15px 0;padding:10px 12px;background:#0d1117;border-radius:8px;height:400px;overflow-y:auto;font-size:13px;color:#c9d1d9;width:100%;box-sizing:border-box;border:1px solid #30363d;line-height:1.5;display:block !important;position:relative;z-index:9999;font-family:monospace;';
 
-    // 放到右侧边栏
+    // 放到右侧边栏最顶部
     var sidebar = document.querySelector('.sidebar');
     if (sidebar) {
-        // 在边栏顶部插入日志窗口
-        sidebar.insertBefore(logContainer, sidebar.firstChild);
+        // 确保sidebar可见
+        sidebar.style.display = 'flex';
+        // 在边栏最顶部插入日志窗口
+        if (sidebar.firstChild) {
+            sidebar.insertBefore(logContainer, sidebar.firstChild);
+        } else {
+            sidebar.appendChild(logContainer);
+        }
+        console.log('[对战] 日志窗口已插入sidebar');
     } else {
         // fallback: 放到gameScreen
         var gameScreen = document.getElementById('gameScreen');
         if (gameScreen) {
             gameScreen.appendChild(logContainer);
         }
+        console.log('[对战] 日志窗口插入fallback位置');
     }
     
     console.log('[对战] 行动日志容器已创建', inserted ? '成功' : '失败');
