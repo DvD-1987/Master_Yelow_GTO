@@ -66,6 +66,9 @@ function initBattle() {
     // 收取盲注
     postBlinds();
     
+    // 创建行动日志容器
+    createActionLogContainer();
+    
     // 更新UI
     updateBattleUI();
     
