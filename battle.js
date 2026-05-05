@@ -53,7 +53,8 @@ function initBattle() {
     
     // 设置庄家（BTN位置）
     battleState.dealerIndex = battleState.playerSeatIndex;
-    battleState.currentPlayerIndex = (battleState.dealerIndex + 1) % 6; // 小盲开始
+    // preflop从UTG（座位3）开始行动
+    battleState.currentPlayerIndex = (battleState.dealerIndex + 3) % 6;
     
     // 初始化牌组并洗牌
     initDeck();
@@ -68,6 +69,9 @@ function initBattle() {
     updateBattleUI();
     
     console.log('[对战] 初始化完成，玩家座位：', battleState.playerSeatIndex);
+    
+    // 启动游戏循环
+    moveToNextPlayer();
 }
 
 // 初始化牌组
@@ -216,6 +220,7 @@ function updateBoardDisplay() {
 
 function updateInfoBar() {
     var player = battleState.players[battleState.playerSeatIndex];
+    var currentPlayer = battleState.players[battleState.currentPlayerIndex];
     
     var potSizeEl = document.getElementById('potSize');
     if (potSizeEl) potSizeEl.textContent = (battleState.pot / 100).toFixed(1) + 'bb';
@@ -229,6 +234,23 @@ function updateInfoBar() {
     
     var effectiveStackEl = document.getElementById('effectiveStack');
     if (effectiveStackEl && player) effectiveStackEl.textContent = (player.chips / 100).toFixed(1) + 'bb';
+    
+    // 显示当前回合玩家
+    var turnIndicator = document.getElementById('turnIndicator');
+    if (!turnIndicator) {
+        turnIndicator = document.createElement('div');
+        turnIndicator.id = 'turnIndicator';
+        turnIndicator.style.cssText = 'text-align:center;font-size:18px;font-weight:bold;margin:10px 0;padding:8px;background:#1a1a2e;border-radius:8px;color:#e94560;';
+        var tableFelt = document.querySelector('.table-felt');
+        if (tableFelt && tableFelt.parentNode) {
+            tableFelt.parentNode.insertBefore(turnIndicator, tableFelt);
+        }
+    }
+    if (currentPlayer) {
+        var isPlayerTurn = battleState.currentPlayerIndex === battleState.playerSeatIndex;
+        turnIndicator.textContent = isPlayerTurn ? '🎯 轮到你了！' : '⏳ 等待 ' + currentPlayer.name + ' (' + currentPlayer.position + ') 行动...';
+        turnIndicator.style.color = isPlayerTurn ? '#00ff88' : '#e94560';
+    }
 }
 
 function updateActionButtons() {
