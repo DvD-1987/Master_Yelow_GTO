@@ -448,9 +448,197 @@
                     </div>
                 </div>
             </div>
+    </div>
+    </div>
+    
+    <!-- 复盘模式 -->
+    <div id="reviewModal" class="modal hidden">
+        <div class="modal-content review-modal">
+            <div class="modal-header">
+                <div class="modal-title">🎬 复盘模式</div>
+                <button class="modal-close-btn" onclick="closeReviewModal()">×</button>
+            </div>
+            
+            <!-- 步骤指示 -->
+            <div class="review-steps">
+                <div class="step active" id="step-preflop">翻前</div>
+                <div class="step" id="step-flop">翻牌</div>
+                <div class="step" id="step-turn">转牌</div>
+                <div class="step" id="step-river">河牌</div>
+                <div class="step" id="step-result">结束</div>
+            </div>
+            
+            <!-- 翻前输入 -->
+            <div id="review-preflop" class="review-content active">
+                <h3>翻前阶段</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>你的手牌</label>
+                        <input type="text" id="revPreflopHand" placeholder="如: Ah As">
+                        <div class="input-hint">格式：Ah As (A黑桃+A黑桃) | AKs (同花) | AKo (非同花)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>位置</label>
+                        <select id="revPreflopPos">
+                            <option value="UTG">UTG 枪口</option>
+                            <option value="UTG+1">UTG+1</option>
+                            <option value="MP">MP 中位</option>
+                            <option value="MP+1">MP+1</option>
+                            <option value="HJ">HJ 劫持</option>
+                            <option value="CO">CO 拦截</option>
+                            <option value="BTN">BTN 庄位</option>
+                            <option value="SB">SB 小盲</option>
+                            <option value="BB">BB 大盲</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>行动</label>
+                    <select id="revPreflopAction">
+                        <option value="raise">Raise 加注</option>
+                        <option value="call">Call 跟注</option>
+                        <option value="fold">Fold 弃牌</option>
+                    </select>
+                </div>
+                <div id="revPreflopResult" class="review-result hidden">
+                    <div class="result-item"><span>胜率</span><span id="revPreflopEquity">-</span></div>
+                    <div class="result-item"><span>建议</span><span id="revPreflopAdvice">-</span></div>
+                </div>
+                <button class="calc-btn" onclick="analyzePreflop()">分析翻前</button>
+                <button class="calc-btn secondary" onclick="nextReviewStep('flop')">进入翻牌 →</button>
+            </div>
+            
+            <!-- 翻牌输入 -->
+            <div id="review-flop" class="review-content">
+                <h3>翻牌圈</h3>
+                <div class="form-group">
+                    <label>翻牌</label>
+                    <input type="text" id="revFlopBoard" placeholder="如: Ah Kd Qc">
+                    <div class="input-hint">格式：Ah Kd Qc (空格分隔，s黑桃/h红桃/d方片/c梅花)</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>底池</label>
+                        <input type="number" id="revFlopPot" placeholder="100" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>下注额</label>
+                        <input type="number" id="revFlopBet" placeholder="50" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>你的行动</label>
+                    <select id="revFlopAction">
+                        <option value="bet">Bet 下注</option>
+                        <option value="check">Check 过牌</option>
+                        <option value="call">Call 跟注</option>
+                        <option value="raise">Raise 加注</option>
+                        <option value="fold">Fold 弃牌</option>
+                    </select>
+                </div>
+                <div id="revFlopResult" class="review-result hidden">
+                    <div class="result-item"><span>胜率</span><span id="revFlopEquity">-</span></div>
+                    <div class="result-item"><span>赔率</span><span id="revFlopOdds">-</span></div>
+                    <div class="result-item"><span>建议</span><span id="revFlopAdvice">-</span></div>
+                </div>
+                <button class="calc-btn" onclick="analyzeFlop()">分析翻牌</button>
+                <button class="calc-btn secondary" onclick="nextReviewStep('turn')">进入转牌 →</button>
+                <button class="calc-btn secondary" onclick="prevReviewStep('preflop')">← 返回翻前</button>
+            </div>
+            
+            <!-- 转牌输入 -->
+            <div id="review-turn" class="review-content">
+                <h3>转牌圈</h3>
+                <div class="form-group">
+                    <label>转牌</label>
+                    <input type="text" id="revTurnCard" placeholder="如: 7s">
+                    <div class="input-hint">格式：7s (单张牌，s黑桃/h红桃/d方片/c梅花)</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>底池</label>
+                        <input type="number" id="revTurnPot" placeholder="200" value="200">
+                    </div>
+                    <div class="form-group">
+                        <label>下注额</label>
+                        <input type="number" id="revTurnBet" placeholder="100" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>你的行动</label>
+                    <select id="revTurnAction">
+                        <option value="bet">Bet 下注</option>
+                        <option value="check">Check 过牌</option>
+                        <option value="call">Call 跟注</option>
+                        <option value="raise">Raise 加注</option>
+                        <option value="fold">Fold 弃牌</option>
+                    </select>
+                </div>
+                <div id="revTurnResult" class="review-result hidden">
+                    <div class="result-item"><span>胜率</span><span id="revTurnEquity">-</span></div>
+                    <div class="result-item"><span>赔率</span><span id="revTurnOdds">-</span></div>
+                    <div class="result-item"><span>建议</span><span id="revTurnAdvice">-</span></div>
+                </div>
+                <button class="calc-btn" onclick="analyzeTurn()">分析转牌</button>
+                <button class="calc-btn secondary" onclick="nextReviewStep('river')">进入河牌 →</button>
+                <button class="calc-btn secondary" onclick="prevReviewStep('flop')">← 返回翻牌</button>
+            </div>
+            
+            <!-- 河牌输入 -->
+            <div id="review-river" class="review-content">
+                <h3>河牌圈</h3>
+                <div class="form-group">
+                    <label>河牌</label>
+                    <input type="text" id="revRiverCard" placeholder="如: 2h">
+                    <div class="input-hint">格式：2h (单张牌，s黑桃/h红桃/d方片/c梅花)</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>底池</label>
+                        <input type="number" id="revRiverPot" placeholder="400" value="400">
+                    </div>
+                    <div class="form-group">
+                        <label>下注额</label>
+                        <input type="number" id="revRiverBet" placeholder="200" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>你的行动</label>
+                    <select id="revRiverAction">
+                        <option value="bet">Bet 下注</option>
+                        <option value="check">Check 过牌</option>
+                        <option value="call">Call 跟注</option>
+                        <option value="raise">Raise 加注</option>
+                        <option value="fold">Fold 弃牌</option>
+                    </select>
+                </div>
+                <div id="revRiverResult" class="review-result hidden">
+                    <div class="result-item"><span>胜率</span><span id="revRiverEquity">-</span></div>
+                    <div class="result-item"><span>赔率</span><span id="revRiverOdds">-</span></div>
+                    <div class="result-item"><span>建议</span><span id="revRiverAdvice">-</span></div>
+                </div>
+                <button class="calc-btn" onclick="analyzeRiver()">分析河牌</button>
+                <button class="calc-btn secondary" onclick="nextReviewStep('result')">结束复盘 →</button>
+                <button class="calc-btn secondary" onclick="prevReviewStep('turn')">← 返回转牌</button>
+            </div>
+            
+            <!-- 结束复盘 -->
+            <div id="review-result" class="review-content">
+                <h3>复盘结束</h3>
+                <div id="reviewSummary" class="review-summary">
+                    <p>请检查以上各阶段输入是否正确。</p>
+                </div>
+                <div class="form-group">
+                    <label>复杂度评分 (1-9)</label>
+                    <input type="number" id="revComplexity" min="1" max="9" value="5">
+                    <div class="input-hint">1-3=初级，4-6=中级，7-9=高级。根据牌面复杂度、思考量评分。</div>
+                </div>
+                <button class="calc-btn" onclick="saveReview()">保存题目到题库</button>
+                <button class="calc-btn secondary" onclick="resetReview()">重置复盘</button>
+            </div>
         </div>
     </div>
-
+    
     <!-- 即将上线提示 -->
     <div id="comingSoonModal" class="modal hidden">
         <div class="modal-content">

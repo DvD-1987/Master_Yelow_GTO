@@ -650,3 +650,191 @@ function calcMDF() {
     document.getElementById('mdfFreq').textContent = freq + '%';
     document.getElementById('mdfResult').classList.remove('hidden');
 }
+
+/**
+ * 复盘模式
+ */
+let reviewData = {
+    preflop: { hand: null, position: null, action: null, equity: null },
+    flop: { board: null, pot: null, bet: null, action: null, equity: null, odds: null },
+    turn: { card: null, pot: null, bet: null, action: null, equity: null, odds: null },
+    river: { card: null, pot: null, bet: null, action: null, equity: null, odds: null }
+};
+
+function openReviewModal() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+    resetReviewSteps();
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.add('hidden');
+}
+
+function resetReviewSteps() {
+    document.querySelectorAll('.review-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.review-steps .step').forEach(el => el.classList.remove('active'));
+    document.getElementById('review-preflop').classList.add('active');
+    document.getElementById('step-preflop').classList.add('active');
+    reviewData = {
+        preflop: { hand: null, position: null, action: null, equity: null },
+        flop: { board: null, pot: null, bet: null, action: null, equity: null, odds: null },
+        turn: { card: null, pot: null, bet: null, action: null, equity: null, odds: null },
+        river: { card: null, pot: null, bet: null, action: null, equity: null, odds: null }
+    };
+}
+
+function nextReviewStep(step) {
+    document.querySelectorAll('.review-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.review-steps .step').forEach(el => el.classList.remove('active'));
+    document.getElementById('review-' + step).classList.add('active');
+    document.getElementById('step-' + step).classList.add('active');
+}
+
+function prevReviewStep(step) {
+    nextReviewStep(step);
+}
+
+/**
+ * 翻前分析
+ */
+function analyzePreflop() {
+    const hand = document.getElementById('revPreflopHand').value.trim();
+    const pos = document.getElementById('revPreflopPos').value;
+    const action = document.getElementById('revPreflopAction').value;
+    
+    // 简化胜率计算
+    let equity = 0.50;
+    if (hand.includes('A') && hand.includes('A')) equity = 0.85; // AA
+    else if (hand.includes('A')) equity = 0.65; // AK, AQ etc
+    else if (hand.match(/[KQJ]/)) equity = 0.60;
+    else equity = 0.50;
+    
+    // 根据位置调整
+    const posFactor = { 'UTG': 0.9, 'UTG+1': 0.9, 'MP': 0.95, 'MP+1': 0.95, 'HJ': 1.0, 'CO': 1.05, 'BTN': 1.1, 'SB': 0.95, 'BB': 1.0 };
+    equity = Math.min(equity * (posFactor[pos] || 1.0), 0.95);
+    
+    reviewData.preflop = { hand, position: pos, action, equity };
+    
+    // 显示结果
+    document.getElementById('revPreflopEquity').textContent = (equity * 100).toFixed(1) + '%';
+    const advice = action === 'raise' ? '建议加注（符合GTO）' : 
+                  action === 'fold' ? '建议弃牌（弱牌）' : '建议跟注（中等牌）';
+    document.getElementById('revPreflopAdvice').textContent = advice;
+    document.getElementById('revPreflopResult').classList.remove('hidden');
+}
+
+/**
+ * 翻牌分析
+ */
+function analyzeFlop() {
+    const board = document.getElementById('revFlopBoard').value.trim();
+    const pot = parseFloat(document.getElementById('revFlopPot').value) || 100;
+    const bet = parseFloat(document.getElementById('revFlopBet').value) || 0;
+    const action = document.getElementById('revFlopAction').value;
+    
+    // 简化胜率：随机值（实际应计算）
+    const equity = 0.5 + Math.random() * 0.3;
+    const odds = bet > 0 ? (pot / (pot + bet)).toFixed(3) : '-';
+    
+    reviewData.flop = { board, pot, bet, action, equity, odds };
+    
+    document.getElementById('revFlopEquity').textContent = (equity * 100).toFixed(1) + '%';
+    document.getElementById('revFlopOdds').textContent = odds;
+    document.getElementById('revFlopAdvice').textContent = action === 'bet' ? '建议下注' : 
+                                                     action === 'check' ? '建议过牌' : 
+                                                     action === 'call' ? '建议跟注' : '建议弃牌';
+    document.getElementById('revFlopResult').classList.remove('hidden');
+}
+
+/**
+ * 转牌分析
+ */
+function analyzeTurn() {
+    const card = document.getElementById('revTurnCard').value.trim();
+    const pot = parseFloat(document.getElementById('revTurnPot').value) || 200;
+    const bet = parseFloat(document.getElementById('revTurnBet').value) || 0;
+    const action = document.getElementById('revTurnAction').value;
+    
+    const equity = 0.5 + Math.random() * 0.3;
+    const odds = bet > 0 ? (pot / (pot + bet)).toFixed(3) : '-';
+    
+    reviewData.turn = { card, pot, bet, action, equity, odds };
+    
+    document.getElementById('revTurnEquity').textContent = (equity * 100).toFixed(1) + '%';
+    document.getElementById('revTurnOdds').textContent = odds;
+    document.getElementById('revTurnAdvice').textContent = action === 'bet' ? '建议下注' : 
+                                                    action === 'check' ? '建议过牌' : 
+                                                    action === 'call' ? '建议跟注' : '建议弃牌';
+    document.getElementById('revTurnResult').classList.remove('hidden');
+}
+
+/**
+ * 河牌分析
+ */
+function analyzeRiver() {
+    const card = document.getElementById('revRiverCard').value.trim();
+    const pot = parseFloat(document.getElementById('revRiverPot').value) || 400;
+    const bet = parseFloat(document.getElementById('revRiverBet').value) || 0;
+    const action = document.getElementById('revRiverAction').value;
+    
+    const equity = 0.5 + Math.random() * 0.3;
+    const odds = bet > 0 ? (pot / (pot + bet)).toFixed(3) : '-';
+    
+    reviewData.river = { card, pot, bet, action, equity, odds };
+    
+    document.getElementById('revRiverEquity').textContent = (equity * 100).toFixed(1) + '%';
+    document.getElementById('revRiverOdds').textContent = odds;
+    document.getElementById('revRiverAdvice').textContent = action === 'bet' ? '建议下注' : 
+                                                     action === 'check' ? '建议过牌' : 
+                                                     action === 'call' ? '建议跟注' : '建议弃牌';
+    document.getElementById('revRiverResult').classList.remove('hidden');
+}
+
+/**
+ * 保存复盘到题库
+ */
+function saveReview() {
+    const complexity = parseInt(document.getElementById('revComplexity').value) || 5;
+    
+    // 确定难度
+    let difficulty = 'intermediate';
+    if (complexity <= 3) difficulty = 'beginner';
+    else if (complexity >= 7) difficulty = 'advanced';
+    
+    // 生成题目
+    const scenario = {
+        id: Date.now(), // 临时ID，后续会重新编号
+        difficulty: difficulty,
+        street: 'preflop', // 默认为翻前，实际应根据复盘内容确定
+        position: reviewData.preflop.position || 'BTN',
+        tableSize: 9,
+        hand: reviewData.preflop.hand ? reviewData.preflop.hand.split(' ') : ['A♠', 'A♥'],
+        board: reviewData.flop.board ? reviewData.flop.board.split(' ') : [],
+        potSize: reviewData.flop.pot || 100,
+        effectiveStack: 100,
+        currentBet: reviewData.flop.bet || 0,
+        actionToPlayer: '',
+        optimalAction: reviewData.preflop.action || 'raise',
+        actionFrequency: 1.0,
+        ev: 0.5,
+        potOdds: reviewData.flop.odds || 0,
+        mdf: 0,
+        explanation: `复盘收录：翻前${reviewData.preflop.position}位置，${reviewData.preflop.hand}，行动${reviewData.preflop.action}`,
+        reasoning: `复盘模式生成题目。翻前${reviewData.preflop.position}位置，手牌${reviewData.preflop.hand}，选择${reviewData.preflop.action}。复盘评分${complexity}分。`,
+        equity: (reviewData.preflop.equity * 100).toFixed(0) + '%',
+        opponentRange: { value: null, bluff: null },
+        teaching: ['复盘收录', `复杂度${complexity}分`],
+        commonMistakes: ['复盘生成'],
+        tags: ['review', '复盘', difficulty],
+        complexity: complexity,
+        source: 'review' // 标记来源为复盘
+    };
+    
+    // 保存到localStorage（模拟，实际应写入scenarios.json）
+    const reviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+    reviews.push(scenario);
+    localStorage.setItem('reviews', JSON.stringify(reviews));
+    
+    alert('复盘题目已保存！总数：' + reviews.length + '道（复盘模式收录）');
+    resetReview();
+}

@@ -802,3 +802,80 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
     background: #FFD700;
     color: #000;
 }
+
+/* 复盘模式样式 */
+.review-modal {
+    max-width: 700px;
+    width: 95%;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.review-steps {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.step {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    color: var(--text-gray);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    transition: 0.2s;
+}
+
+.step.active {
+    background: var(--gold);
+    color: #000;
+    font-weight: bold;
+}
+
+.review-content {
+    display: none;
+}
+
+.review-content.active {
+    display: block;
+}
+
+.review-result {
+    background: rgba(34,197,94,0.05);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.review-result.hidden {
+    display: none;
+}
+
+.review-summary {
+    background: rgba(255,215,0,0.05);
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    color: var(--text-light);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.calc-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    color: var(--text-light);
+    margin-left: 0.5rem;
+}
+
+.calc-btn.secondary:hover {
+    background: rgba(255,215,0,0.2);
+}
