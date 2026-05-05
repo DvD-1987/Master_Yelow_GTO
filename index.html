@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTO德州扑克练习器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ============ 游戏封面 ============ -->
+    <div id="coverScreen" class="cover-screen">
+        <div class="cover-particles"></div>
+        <div class="cover-content">
+            <div class="cover-badge">MASTER YELOW GTO</div>
+            <h1 class="cover-title">黄老师教你玩德州_Pro</h1>
+            <p class="cover-subtitle">基于博弈论的最优策略练习系统</p>
+            
+            <div class="cover-cards">
+                <div class="cover-card" onclick="startGame('beginner')">
+                    <div class="cover-card-icon">📚</div>
+                    <div class="cover-card-title">练习模式</div>
+                    <div class="cover-card-desc">从初级开始，循序渐进掌握GTO策略</div>
+                    <div class="cover-card-levels">
+                        <span class="level-tag beginner">初级</span>
+                        <span class="level-tag intermediate">中级</span>
+                        <span class="level-tag advanced">高级</span>
+                    </div>
+                </div>
+                
+                <div class="cover-card" onclick="showComingSoon('对战模式')">
+                    <div class="cover-card-icon">⚔️</div>
+                    <div class="cover-card-title">对战模式</div>
+                    <div class="cover-card-desc">与AI对手实时对战，检验学习成果</div>
+                    <div class="cover-card-soon">即将上线</div>
+                </div>
+                
+                <div class="cover-card" onclick="showComingSoon('复盘模式')">
+                    <div class="cover-card-icon">🎬</div>
+                    <div class="cover-card-title">复盘模式</div>
+                    <div class="cover-card-desc">回放历史对局，分析决策得失</div>
+                    <div class="cover-card-soon">即将上线</div>
+                </div>
+                
+                <div class="cover-card" onclick="showComingSoon('概率计算')">
+                    <div class="cover-card-icon">🧮</div>
+                    <div class="cover-card-title">概率计算</div>
+                    <div class="cover-card-desc">胜率、赔率、MDF等专业工具</div>
+                    <div class="cover-card-soon">即将上线</div>
+                </div>
+            </div>
+            
+            <div class="cover-footer">
+                <p>🎯 5000+道情境题 · GTO最优策略 · 专业解析</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 游戏主界面 ============ -->
+    <div id="gameScreen" class="game-screen hidden">
+        <!-- 顶部栏 -->
+        <header class="game-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="goToCover()">← 返回</button>
+                <div class="logo-mini">
+                    <span class="logo-icon">🃏</span>
+                    <span class="logo-text">GTO Poker</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn active" data-difficulty="beginner" onclick="switchDifficulty('beginner')">初级</button>
+                    <button class="difficulty-btn" data-difficulty="intermediate" onclick="switchDifficulty('intermediate')">中级</button>
+                    <button class="difficulty-btn" data-difficulty="advanced" onclick="switchDifficulty('advanced')">高级</button>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="stat-pill">
+                    <span class="stat-pill-label">正确率</span>
+                    <span class="stat-pill-value" id="headerAccuracy">0%</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-pill-label">进度</span>
+                    <span class="stat-pill-value" id="headerProgress">0/0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主游戏区：三栏布局 -->
+        <div class="game-area">
+            <!-- 左栏：牌桌 + 手牌 + 公共牌 -->
+            <div class="left-panel">
+                <!-- 信息栏 -->
+                <div class="info-bar">
+                    <div class="info-chip">
+                        <span class="info-chip-label">底池</span>
+                        <span class="info-chip-value gold" id="potSize">0bb</span>
+                    </div>
+                    <div class="info-chip">
+                        <span class="info-chip-label">当前下注</span>
+                        <span class="info-chip-value" id="currentBet">-</span>
+                    </div>
+                    <div class="info-chip">
+                        <span class="info-chip-label">对手动作</span>
+                        <span class="info-chip-value" id="opponentAction">首个行动</span>
+                    </div>
+                    <div class="info-chip">
+                        <span class="info-chip-label">阶段</span>
+                        <span class="info-chip-value highlight" id="street">翻前</span>
+                    </div>
+                    <div class="info-chip">
+                        <span class="info-chip-label">筹码深度</span>
+                        <span class="info-chip-value" id="effectiveStack">-</span>
+                    </div>
+                    <div class="info-chip">
+                        <span class="info-chip-label">底池赔率</span>
+                        <span class="info-chip-value" id="potOdds">-</span>
+                    </div>
+                </div>
+
+                <!-- 椭圆牌桌 -->
+                <div class="casino-table-wrapper">
+                    <div class="casino-table">
+                        <div class="table-felt">
+                            <img src="assets/table.png" alt="牌桌" class="table-bg-image">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 手牌区域 -->
+                <div class="player-section">
+                    <div class="section-label">
+                        <span class="section-label-icon">👆</span>
+                        你的手牌
+                        <span class="position-badge" id="playerPosition">-</span>
+                    </div>
+                    <div class="cards-container" id="playerCards">
+                        <div class="card card-back"></div>
+                        <div class="card card-back"></div>
+                    </div>
+                    <!-- 对手信息 -->
+                    <div class="opponent-info" id="opponentInfo">
+                        <span class="opponent-label">对手：</span>
+                        <span class="opponent-position" id="opponentPosition">-</span>
+                        <span class="opponent-action" id="opponentActionInline">等待中</span>
+                    </div>
+                </div>
+
+                <!-- 公共牌区域 -->
+                <div class="board-section">
+                    <div class="section-label">
+                        <span class="section-label-icon">🌟</span>
+                        公共牌
+                    </div>
+                    <div class="cards-container" id="boardCards">
+                        <div class="no-board">翻前阶段，无公共牌</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间栏：动作按钮 + GTO反馈 + 推理分析 -->
+            <div class="middle-panel">
+                <!-- 动作按钮 -->
+                <div class="action-bar">
+                    <button class="action-btn btn-fold" id="btn-fold">
+                        <span class="btn-text">Fold</span>
+                        <span class="btn-key">F</span>
+                    </button>
+                    <button class="action-btn btn-check" id="btn-check">
+                        <span class="btn-text">Check</span>
+                        <span class="btn-key">C</span>
+                    </button>
+                    <button class="action-btn btn-call" id="btn-call">
+                        <span class="btn-text">Call</span>
+                        <span class="btn-key">L</span>
+                    </button>
+                    <button class="action-btn btn-bet" id="btn-bet">
+                        <span class="btn-text">Bet</span>
+                        <span class="btn-key">B</span>
+                    </button>
+                    <button class="action-btn btn-raise" id="btn-raise">
+                        <span class="btn-text">3-Bet</span>
+                        <span class="btn-key">R</span>
+                    </button>
+                </div>
+
+                <!-- GTO反馈 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">💡</span>
+                        <span>GTO反馈</span>
+                    </div>
+                    <div class="feedback-panel" id="feedback">
+                        <div class="feedback-title" id="feedbackTitle">选择你的动作</div>
+                        <div class="feedback-body" id="feedbackContent">
+                            <p class="feedback-hint">根据情境信息，选择你认为的GTO最优动作</p>
+                        </div>
+                        <div class="feedback-stats" id="feedbackStats"></div>
+                    </div>
+                </div>
+
+                <!-- 推理分析 -->
+                <div class="sidebar-card reasoning-card" id="reasoningSection">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">📖</span>
+                        <span>推理分析</span>
+                    </div>
+                    <div class="reasoning-body" id="reasoningText">
+                        <p class="reasoning-hint">答题后显示详细分析</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右栏：侧边栏 -->
+            <div class="sidebar">
+                <!-- 统计 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">📊</span>
+                        <span>练习统计</span>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-cell">
+                            <div class="stat-num" id="correctCount">0</div>
+                            <div class="stat-lbl">正确</div>
+                        </div>
+                        <div class="stat-cell">
+                            <div class="stat-num" id="totalScenarios">0</div>
+                            <div class="stat-lbl">已做</div>
+                        </div>
+                        <div class="stat-cell">
+                            <div class="stat-num gold" id="accuracy">0%</div>
+                            <div class="stat-lbl">准确率</div>
+                        </div>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-bar-casino">
+                            <div class="progress-fill-casino" id="progressFill" style="width:0%"></div>
+                        </div>
+                        <div class="progress-label"><span id="scenarioCounter">0 / 0</span></div>
+                    </div>
+                </div>
+
+                <!-- 当前情境 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">📝</span>
+                        <span>当前情境</span>
+                    </div>
+                    <div class="context-grid">
+                        <div class="context-row">
+                            <span class="ctx-key">阶段</span>
+                            <span class="ctx-val" id="ctx-street">-</span>
+                        </div>
+                        <div class="context-row">
+                            <span class="ctx-key">位置</span>
+                            <span class="ctx-val gold" id="ctx-position">-</span>
+                        </div>
+                        <div class="context-row">
+                            <span class="ctx-key">底池</span>
+                            <span class="ctx-val" id="ctx-pot">-</span>
+                        </div>
+                        <div class="context-row">
+                            <span class="ctx-key">筹码深度</span>
+                            <span class="ctx-val" id="ctx-stack">-</span>
+                        </div>
+                        <div class="context-row">
+                            <span class="ctx-key">对手动作</span>
+                            <span class="ctx-val" id="ctx-opponent">-</span>
+                        </div>
+                    </div>
+                    <div class="nav-row">
+                        <button class="nav-btn-sm" onclick="previousScenario()">← 上一题</button>
+                        <button class="nav-btn-sm primary" onclick="nextScenario()">下一题 →</button>
+                    </div>
+                </div>
+
+                <!-- 对手范围参考 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">🎯</span>
+                        <span>对手范围参考</span>
+                    </div>
+                    <div class="range-block">
+                        <div class="range-tag value">价值</div>
+                        <div class="range-text" id="opponentValueRange">-</div>
+                    </div>
+                    <div class="range-block">
+                        <div class="range-tag bluff">诈唬</div>
+                        <div class="range-text" id="opponentBluffRange">-</div>
+                    </div>
+                </div>
+
+                <!-- 教学要点 -->
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <span class="sidebar-icon">💡</span>
+                        <span>教学要点</span>
+                    </div>
+                    <ul class="teaching-list" id="teachingPoints">
+                        <li>暂无教学要点</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 即将上线提示 -->
+    <div id="comingSoonModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-icon">🔜</div>
+            <div class="modal-title" id="modalTitle">即将上线</div>
+            <div class="modal-body" id="modalBody">该功能正在紧张开发中，敬请期待！</div>
+            <button class="modal-close" onclick="closeModal()">好的</button>
+        </div>
+    </div>
+
+    <script src="gto-engine.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
