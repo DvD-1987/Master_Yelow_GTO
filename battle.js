@@ -278,16 +278,17 @@ function createActionLogContainer() {
     
     logContainer = document.createElement('div');
     logContainer.id = 'actionLog';
-    logContainer.style.cssText = 'margin:15px auto;padding:12px 15px;background:#1a1a2e;border-radius:10px;max-height:250px;overflow-y:auto;font-size:15px;color:#eee;width:95%;max-width:800px;box-sizing:border-box;border:1px solid #333;';
+    logContainer.style.cssText = 'margin:10px 0;padding:10px 12px;background:#1a1a2e;border-radius:8px;height:450px;overflow-y:auto;font-size:14px;color:#eee;width:280px;box-sizing:border-box;border:1px solid #444;line-height:1.6;';
 
-    // 放到牌桌下面，横跨整个宽度
-    var gameScreen = document.getElementById('gameScreen');
-    if (gameScreen) {
-        // 找到table-felt，插入到它后面
-        var tableFelt = gameScreen.querySelector('.table-felt');
-        if (tableFelt) {
-            tableFelt.insertAdjacentElement('afterend', logContainer);
-        } else {
+    // 放到右侧边栏
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        // 在边栏顶部插入日志窗口
+        sidebar.insertBefore(logContainer, sidebar.firstChild);
+    } else {
+        // fallback: 放到gameScreen
+        var gameScreen = document.getElementById('gameScreen');
+        if (gameScreen) {
             gameScreen.appendChild(logContainer);
         }
     }
