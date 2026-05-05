@@ -308,18 +308,19 @@ function addActionLog(player, action, amount) {
 function updateActionLog() {
     var logContainer = document.getElementById('actionLog');
     if (!logContainer) {
-        // 创建日志容器，放到左侧面板
+        // 创建日志容器，放到右侧边栏
         logContainer = document.createElement('div');
         logContainer.id = 'actionLog';
-        logContainer.style.cssText = 'margin-top:15px;padding:12px;background:#1a1a2e;border-radius:8px;height:350px;overflow-y:auto;font-size:13px;color:#ddd;width:100%;box-sizing:border-box;border:1px solid #333;line-height:1.5;';
+        logContainer.style.cssText = 'margin:10px 0;padding:12px;background:#1a1a2e;border-radius:8px;height:400px;overflow-y:auto;font-size:13px;color:#ddd;width:100%;box-sizing:border-box;border:1px solid #333;line-height:1.5;';
         
-        // 放到左侧面板，在player-section前面
-        var leftPanel = document.querySelector('.left-panel');
-        var playerSection = document.querySelector('.player-section');
-        if (leftPanel && playerSection) {
-            leftPanel.insertBefore(logContainer, playerSection);
-        } else if (leftPanel) {
-            leftPanel.appendChild(logContainer);
+        // 放到右侧边栏顶部
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            if (sidebar.firstChild) {
+                sidebar.insertBefore(logContainer, sidebar.firstChild);
+            } else {
+                sidebar.appendChild(logContainer);
+            }
         }
     }
     
@@ -814,36 +815,61 @@ window.startBattle = function() {
         practiceElements[i].style.display = 'none';
     }
     
-    // 确保sidebar显示（用于放日志窗口）
+    // 确保sidebar显示（用于放日志窗口、手牌、按钮）
     var sidebar = document.querySelector('.sidebar');
     if (sidebar) {
         sidebar.style.display = 'flex';
         sidebar.style.width = '320px';
+        sidebar.style.flexDirection = 'column';
+        sidebar.style.gap = '10px';
     }
     
     // 隐藏原来的对手信息（用座位代替）
     var opponentInfo = document.getElementById('opponentInfo');
     if (opponentInfo) opponentInfo.style.display = 'none';
     
-    // 隐藏middle-panel（把动作按钮移到left-panel底部）
+    // 隐藏middle-panel（把动作按钮移到sidebar）
     var middlePanel = document.querySelector('.middle-panel');
     if (middlePanel) middlePanel.style.display = 'none';
     
-    // 把动作按钮移到left-panel底部
-    var leftPanel = document.querySelector('.left-panel');
+    // 把动作按钮移到sidebar底部
     var actionBar = document.querySelector('.action-bar');
-    if (leftPanel && actionBar) {
-        // 从原位置移除
+    if (sidebar && actionBar) {
         if (actionBar.parentNode) {
             actionBar.parentNode.removeChild(actionBar);
         }
-        // 添加到left-panel底部
-        leftPanel.appendChild(actionBar);
-        // 显示action-bar
+        sidebar.appendChild(actionBar);
         actionBar.style.display = 'flex';
-        // 调整样式
         actionBar.style.marginTop = 'auto';
         actionBar.style.padding = '1rem 0';
+    }
+    
+    // 把手牌区域移到sidebar顶部
+    var playerSection = document.querySelector('.player-section');
+    var boardSection = document.querySelector('.board-section');
+    if (sidebar && playerSection) {
+        if (playerSection.parentNode) {
+            playerSection.parentNode.removeChild(playerSection);
+        }
+        // 在sidebar顶部插入（在日志窗口前面）
+        if (sidebar.firstChild) {
+            sidebar.insertBefore(playerSection, sidebar.firstChild);
+        } else {
+            sidebar.appendChild(playerSection);
+        }
+        playerSection.style.display = 'block';
+    }
+    // 把公共牌区域也移到sidebar
+    if (sidebar && boardSection) {
+        if (boardSection.parentNode) {
+            boardSection.parentNode.removeChild(boardSection);
+        }
+        if (playerSection && playerSection.nextSibling) {
+            sidebar.insertBefore(boardSection, playerSection.nextSibling);
+        } else {
+            sidebar.appendChild(boardSection);
+        }
+        boardSection.style.display = 'block';
     }
     
     // 初始化对战
@@ -878,15 +904,45 @@ window.goToCover = function() {
         
         // 恢复sidebar
         var sidebar = document.querySelector('.sidebar');
-        if (sidebar) sidebar.style.display = '';
-        
-        // 恢复difficulty-selector
-        var difficultySelector = document.querySelector('.difficulty-selector');
-        if (difficultySelector) difficultySelector.style.display = '';
+        if (sidebar) {
+            sidebar.style.display = '';
+            sidebar.style.flexDirection = '';
+            sidebar.style.gap = '';
+        }
         
         // 恢复left-panel
         var leftPanel = document.querySelector('.left-panel');
         if (leftPanel) leftPanel.style.display = '';
+        
+        // 把手牌区域移回left-panel
+        var playerSection = document.querySelector('.player-section');
+        if (playerSection && leftPanel) {
+            if (playerSection.parentNode) {
+                playerSection.parentNode.removeChild(playerSection);
+            }
+            // 插入到left-panel中，在info-bar后面
+            var infoBar = leftPanel.querySelector('.info-bar');
+            if (infoBar && infoBar.nextSibling) {
+                leftPanel.insertBefore(playerSection, infoBar.nextSibling);
+            } else {
+                leftPanel.appendChild(playerSection);
+            }
+            playerSection.style.display = '';
+        }
+        
+        // 把公共牌区域移回left-panel
+        var boardSection = document.querySelector('.board-section');
+        if (boardSection && leftPanel) {
+            if (boardSection.parentNode) {
+                boardSection.parentNode.removeChild(boardSection);
+            }
+            if (playerSection && playerSection.nextSibling) {
+                leftPanel.insertBefore(boardSection, playerSection.nextSibling);
+            } else {
+                leftPanel.appendChild(boardSection);
+            }
+            boardSection.style.display = '';
+        }
         
         // 把action-bar移回middle-panel
         var actionBar = document.querySelector('.action-bar');
@@ -896,6 +952,7 @@ window.goToCover = function() {
             originalMiddlePanel.insertBefore(actionBar, originalMiddlePanel.firstChild);
             actionBar.style.marginTop = '';
             actionBar.style.padding = '';
+            actionBar.style.display = '';
         }
         
         // 移除对战座位
