@@ -380,12 +380,13 @@ function getStreetNameChinese(street) {
 // ==================== 动作处理 ====================
 function handlePlayerAction(action) {
     if (!battleState.active || battleState.gameOver) return;
-    var player = battleState.players[battleState.playerSeatIndex];
+    var playerIndex = battleState.currentPlayerIndex;
+    var player = battleState.players[playerIndex];
     if (!player || player.isFolded || player.isAllIn) return;
-    
-    console.log('[对战] 玩家执行动作:', action);
+
+    console.log('[对战] 玩家执行动作:', action, '座位:', playerIndex, '位置:', player.position);
     var amount = 0;
-    
+
     switch(action) {
         case 'fold':
             player.isFolded = true;
@@ -449,12 +450,16 @@ function handlePlayerAction(action) {
             console.log('[对战] 玩家ALL IN', allinAmount);
             break;
     }
-    
-    // 检查游戏是否结束
-    checkBattleEnd();
-    
+
+    // 记录这手牌的动作，用于showdown计算
+    if (!battleState.currentHandActions) battleState.currentHandActions = [];
+    battleState.currentHandActions.push({ playerIndex: playerIndex, action: action, amount: amount });
+
+    // 检查这手牌是否结束（所有玩家都行动完了）
+    checkHandEnd();
+
     // 移动到下一个玩家
-    if (!battleState.gameOver) {
+    if (!battleState.gameOver && !battleState.handEnded) {
         moveToNextPlayer();
     }
 }
@@ -486,7 +491,7 @@ function moveToNextPlayer() {
     if (!found) {
         // 没有找到下一个玩家，检查游戏是否结束
         console.log('[对战] 未找到下一个玩家，检查游戏状态');
-        checkBattleEnd();
+        checkHandEnd();
         if (!battleState.gameOver) {
             // 如果游戏没有结束，可能应该进入下一阶段
             nextStreet();
@@ -629,15 +634,85 @@ function fastForwardToShowdown() {
 
 // 摊牌阶段
 function showdown() {
-    console.log('[对战] 摊牌阶段 - 简化版，直接结束');
-    // 简化：暂时直接结束游戏
-    battleState.gameOver = true;
-    var player = battleState.players[battleState.playerSeatIndex];
-    var activePlayers = 0;
+    console.log('[对战] 摊牌阶段');
+    battleState.currentStreet = 'showdown';
+
+    // 简化胜负判定：比较未弃牌玩家的筹码投入，投入多的赢（或随机）
+    var activePlayers = [];
     for (var i = 0; i < battleState.players.length; i++) {
-        if (!battleState.players[i].isFolded) activePlayers++;
+        if (!battleState.players[i].isFolded) {
+            activePlayers.push(battleState.players[i]);
+        }
     }
-    showBattleResult(activePlayers === 1 && !player.isFolded);
+
+    if (activePlayers.length === 1) {
+        // 只剩一个玩家，直接赢
+        var winner = activePlayers[0];
+        winner.chips += battleState.pot;
+        console.log('[对战]', winner.name, '获胜，赢得底池', battleState.pot/100, 'bb');
+        finishHand(winner);
+        return;
+    }
+
+    // 多个玩家摊牌：简化判定（随机选赢家，实际应该用牌力比较）
+    var winIndex = Math.floor(Math.random() * activePlayers.length);
+    var winner = activePlayers[winIndex];
+    winner.chips += battleState.pot;
+    console.log('[对战] 摊牌，', winner.name, '获胜，赢得底池', battleState.pot/100, 'bb');
+    finishHand(winner);
+}
+
+// 一手牌结束，处理筹码并决定是否继续对战
+function finishHand(winner) {
+    console.log('[对战] 一手牌结束。赢家：', winner.name, '筹码：', winner.chips/100, 'bb');
+    var player = battleState.players[battleState.playerSeatIndex];
+
+    // 显示结果（不结束对战）
+    var message = '一手牌结束！\n\n';
+    if (winner.isHuman) {
+        message += '🎉 你赢了这手牌！\n';
+    } else {
+        message += '😢 你输了这手牌\n';
+    }
+    message += '你的剩余筹码：' + (player.chips / 100).toFixed(1) + 'bb\n';
+    message += '底池：' + (battleState.pot / 100).toFixed(1) + 'bb\n';
+
+    // 显示简要结果，然后开始新手牌
+    if (typeof alert !== 'undefined') {
+        // 在非alert情况下，用页面提示更好，这里先用alert
+        // alert(message); // 可选：如果要弹窗提示
+    }
+
+    // 检查玩家是否输完筹码
+    if (player.chips <= 0 && !player.isAllIn) {
+        battleState.gameOver = true;
+        showBattleResult(false);
+        return;
+    }
+
+    // 开始新手牌
+    setTimeout(function() {
+        startNewHand();
+    }, 2000); // 2秒后开始新手牌
+}
+
+function showBattleResult(playerWon) {
+    var player = battleState.players[battleState.playerSeatIndex];
+
+    var message = '对战结束！\n\n';
+    if (playerWon) {
+        message += '🎉 你赢了这手牌！\n';
+    } else {
+        message += '😢 你输了这手牌\n';
+    }
+    message += '你的剩余筹码：' + (player.chips / 100).toFixed(1) + 'bb\n';
+    message += '底池：' + (battleState.pot / 100).toFixed(1) + 'bb\n\n';
+    message += '（完整对战循环正在开发中...）';
+
+    alert(message);
+
+    // 返回封面
+    setTimeout(function() { goToCover(); }, 500);
 }
 
 function aiAction(playerIndex) {
@@ -738,37 +813,89 @@ function executeAction(playerIndex, action) {
             addActionLog(player, 'allin', amount);
             break;
     }
-    
-    checkBattleEnd();
-    
-    if (!battleState.gameOver) {
+
+    checkHandEnd();
+
+    if (!battleState.gameOver && !battleState.handEnded) {
         moveToNextPlayer();
     }
 }
 
-function checkBattleEnd() {
-    var player = battleState.players[battleState.playerSeatIndex];
-    
-    // 检查玩家是否输光
-    if (player.chips <= 0 && !player.isAllIn) {
-        battleState.gameOver = true;
-        showBattleResult(false);
-        return;
-    }
-    
-    // 检查是否只剩一个未弃牌玩家
+function checkHandEnd() {
+    // 检查这手牌是否结束：只剩一个未弃牌玩家，或所有未弃牌玩家都ALL IN
     var activePlayers = [];
     for (var a = 0; a < battleState.players.length; a++) {
         if (!battleState.players[a].isFolded) {
             activePlayers.push(battleState.players[a]);
         }
     }
+
     if (activePlayers.length === 1) {
-        battleState.gameOver = true;
-        var winner = activePlayers[0];
-        showBattleResult(winner.isHuman);
+        // 只剩一个玩家，直接摊牌
+        console.log('[对战] 只剩一个未弃牌玩家，进入摊牌');
+        battleState.currentStreet = 'showdown';
+        showdown();
         return;
     }
+
+    // 检查是否所有未弃牌玩家都ALL IN了
+    var allAllIn = activePlayers.length > 0 && activePlayers.every(function(p) { return p.isAllIn; });
+    if (allAllIn) {
+        console.log('[对战] 所有未弃牌玩家ALL IN，快速发完剩余牌');
+        fastForwardToShowdown();
+        return;
+    }
+
+    // 检查当前轮是否完成
+    if (isRoundComplete()) {
+        console.log('[对战] 一轮结束，进入下一阶段');
+        nextStreet();
+    }
+}
+
+function startNewHand() {
+    console.log('[对战] 开始新手牌');
+    battleState.handEnded = false;
+    battleState.currentHandActions = [];
+
+    // 重置所有玩家状态
+    for (var i = 0; i < battleState.players.length; i++) {
+        var p = battleState.players[i];
+        p.isFolded = false;
+        p.isAllIn = false;
+        p.currentBet = 0;
+        p.totalBetThisHand = 0;
+        p.hand = [];
+    }
+
+    // 庄家顺时针移动一位
+    battleState.dealerIndex = (battleState.dealerIndex + 1) % 6;
+    battleState.playerSeatIndex = battleState.dealerIndex; // 玩家永远是庄家
+    battleState.currentPlayerIndex = (battleState.dealerIndex + 3) % 6; // preflop从UTG开始
+
+    // 重新初始化
+    battleState.pot = 0;
+    battleState.currentBet = 0;
+    battleState.currentStreet = 'preflop';
+    battleState.board = [];
+
+    // 重新洗牌、发牌、收盲注
+    initDeck();
+    dealCards();
+    postBlinds();
+
+    // 清理行动日志（可选）
+    battleState.actionLog = [];
+
+    updateBattleUI();
+
+    // 如果第一个行动的是AI，自动开始
+    var firstPlayer = battleState.players[battleState.currentPlayerIndex];
+    if (firstPlayer && !firstPlayer.isHuman) {
+        setTimeout(function() { aiAction(battleState.currentPlayerIndex); }, 1000);
+    }
+
+    console.log('[对战] 新手牌开始，庄家：', battleState.dealerIndex);
 }
 
 function showBattleResult(playerWon) {
