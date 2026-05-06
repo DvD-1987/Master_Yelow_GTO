@@ -347,22 +347,22 @@ function updateActionLog() {
 
 function updateActionButtons() {
     var isPlayerTurn = battleState.currentPlayerIndex === battleState.playerSeatIndex;
-    var player = battleState.players[battleState.playerSeatIndex];
-    
+    var player = battleState.players[battleState.currentPlayerIndex]; // 修复：用 currentPlayerIndex
+
     var disabled = !isPlayerTurn || player.isFolded || player.isAllIn || battleState.gameOver;
-    
+
     var btnFold = document.getElementById('btn-fold');
     var btnCheck = document.getElementById('btn-check');
     var btnCall = document.getElementById('btn-call');
     var btnBet = document.getElementById('btn-bet');
     var btnRaise = document.getElementById('btn-raise');
     var btnAllin = document.getElementById('btn-allin');
-    
+
     if (btnFold) btnFold.disabled = disabled;
     if (btnCheck) btnCheck.disabled = disabled || battleState.currentBet > player.currentBet;
     if (btnCall) btnCall.disabled = disabled || battleState.currentBet <= player.currentBet;
-    if (btnBet) btnBet.disabled = disabled;
-    if (btnRaise) btnRaise.disabled = disabled;
+    if (btnBet) btnBet.disabled = disabled || battleState.currentBet > player.currentBet; // 没人下注才能bet
+    if (btnRaise) btnRaise.disabled = disabled || battleState.currentBet <= player.currentBet; // 有人下注才能raise
     if (btnAllin) btnAllin.disabled = disabled;
 }
 
