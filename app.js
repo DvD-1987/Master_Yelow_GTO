@@ -581,13 +581,18 @@ function closeProbabilityModal() {
 }
 
 function switchProbTab(tab) {
-    // 切换tab按钮状态
-    document.querySelectorAll('.prob-tab').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    // 切换tab按钮状态：不能依赖全局 event，openProbabilityModal() 主动调用时没有 event
+    document.querySelectorAll('.prob-tab').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tab + "'")) {
+            btn.classList.add('active');
+        }
+    });
     
     // 切换内容显示
     document.querySelectorAll('.prob-content').forEach(content => content.classList.remove('active'));
-    document.getElementById('prob-' + tab).classList.add('active');
+    const target = document.getElementById('prob-' + tab);
+    if (target) target.classList.add('active');
 }
 
 /**

@@ -379,6 +379,7 @@ function getStreetNameChinese(street) {
 
 // ==================== 动作处理 ====================
 function handlePlayerAction(action) {
+    if (!battleState.active || battleState.gameOver) return;
     var player = battleState.players[battleState.playerSeatIndex];
     if (!player || player.isFolded || player.isAllIn) return;
     
@@ -459,6 +460,7 @@ function handlePlayerAction(action) {
 }
 
 function moveToNextPlayer() {
+    if (!battleState.active || battleState.gameOver) return;
     // 先检查一轮是否结束
     if (isRoundComplete()) {
         console.log('[对战] 一轮结束，进入下一阶段');
@@ -639,6 +641,7 @@ function showdown() {
 }
 
 function aiAction(playerIndex) {
+    if (!battleState.active || battleState.gameOver) return;
     var player = battleState.players[playerIndex];
     if (!player || player.isFolded || player.isAllIn) return;
     
@@ -787,11 +790,144 @@ function showBattleResult(playerWon) {
     setTimeout(function() { goToCover(); }, 500);
 }
 
-// ==================== 修改现有函数 ====================
-// 修改playerAction函数以支持对战模式
+// ==================== 模式切换与UI恢复 ====================
+// 这块只做模式切换，不再把整套UI搬来搬去。原则：
+// 练习模式恢复三栏；对战模式保留左侧牌桌，动作按钮放牌桌下方，隐藏GTO反馈/推理/统计。
+
 var originalPlayerAction = window.playerAction;
+var originalStartGame = window.startGame;
+var originalGoToCover = window.goToCover;
+
+function moveElement(element, target, beforeNode) {
+    if (!element || !target) return;
+    if (element.parentNode) element.parentNode.removeChild(element);
+    if (beforeNode && beforeNode.parentNode === target) {
+        target.insertBefore(element, beforeNode);
+    } else {
+        target.appendChild(element);
+    }
+}
+
+function clearInlineDisplay(selector) {
+    var nodes = document.querySelectorAll(selector);
+    for (var i = 0; i < nodes.length; i++) nodes[i].style.display = '';
+}
+
+function restorePracticeLayout() {
+    battleState.active = false;
+    window.gameMode = 'practice';
+
+    var leftPanel = document.querySelector('.left-panel');
+    var middlePanel = document.querySelector('.middle-panel');
+    var sidebar = document.querySelector('.sidebar');
+    var infoBar = document.querySelector('.info-bar');
+    var tableWrapper = document.querySelector('.casino-table-wrapper');
+    var playerSection = document.querySelector('.player-section');
+    var boardSection = document.querySelector('.board-section');
+    var actionBar = document.querySelector('.action-bar');
+    var actionLog = document.getElementById('actionLog');
+    var difficultySelector = document.querySelector('.difficulty-selector');
+
+    if (leftPanel) leftPanel.style.display = '';
+    if (middlePanel) middlePanel.style.display = '';
+    if (sidebar) {
+        sidebar.style.display = '';
+        sidebar.style.width = '';
+        sidebar.style.flexDirection = '';
+        sidebar.style.gap = '';
+    }
+    if (difficultySelector) difficultySelector.style.display = '';
+
+    // 恢复DOM顺序：info-bar -> actionLog(隐藏) -> table -> hand -> board
+    if (leftPanel) {
+        if (actionLog) {
+            moveElement(actionLog, leftPanel, tableWrapper || null);
+            actionLog.style.display = 'none';
+        }
+        if (tableWrapper) moveElement(tableWrapper, leftPanel, null);
+        if (playerSection) moveElement(playerSection, leftPanel, null);
+        if (boardSection) moveElement(boardSection, leftPanel, null);
+    }
+
+    // 恢复动作按钮到中栏顶部
+    if (middlePanel && actionBar) {
+        moveElement(actionBar, middlePanel, middlePanel.firstChild);
+        actionBar.style.marginTop = '';
+        actionBar.style.padding = '';
+        actionBar.style.display = '';
+    }
+
+    clearInlineDisplay('.sidebar-card, .feedback-panel, .reasoning-section, .stats-row, .context-grid, .teaching-section, .mistakes-section, .opponent-range-section, .opponent-info');
+
+    // 移除对战座位
+    var seats = document.querySelectorAll('.seat');
+    for (var k = 0; k < seats.length; k++) {
+        if (seats[k].parentNode) seats[k].parentNode.removeChild(seats[k]);
+    }
+
+    // 清理对战状态文字，避免回到练习后残留
+    var turn = document.getElementById('turnIndicator');
+    if (turn && turn.parentNode) turn.parentNode.removeChild(turn);
+}
+
+function prepareBattleLayout() {
+    window.gameMode = 'battle';
+
+    var leftPanel = document.querySelector('.left-panel');
+    var middlePanel = document.querySelector('.middle-panel');
+    var sidebar = document.querySelector('.sidebar');
+    var playerSection = document.querySelector('.player-section');
+    var boardSection = document.querySelector('.board-section');
+    var actionBar = document.querySelector('.action-bar');
+    var actionLog = document.getElementById('actionLog');
+    var difficultySelector = document.querySelector('.difficulty-selector');
+
+    if (difficultySelector) difficultySelector.style.display = 'none';
+    if (leftPanel) leftPanel.style.display = 'flex';
+
+    // 中栏全是练习反馈，进入对战直接隐藏
+    if (middlePanel) middlePanel.style.display = 'none';
+
+    // 右栏只保留行动日志，其他练习卡片隐藏
+    var practiceElements = document.querySelectorAll('.sidebar-card, .feedback-panel, .reasoning-section, .stats-row, .context-grid, .teaching-section, .mistakes-section, .opponent-range-section');
+    for (var i = 0; i < practiceElements.length; i++) practiceElements[i].style.display = 'none';
+
+    if (sidebar) {
+        sidebar.style.display = 'flex';
+        sidebar.style.width = '300px';
+        sidebar.style.flexDirection = 'column';
+        sidebar.style.gap = '10px';
+    }
+
+    // 对战模式：手牌、公共牌、动作按钮都放在牌桌下方，不再塞到右侧
+    if (leftPanel) {
+        if (playerSection) {
+            moveElement(playerSection, leftPanel, null);
+            playerSection.style.display = 'block';
+        }
+        if (boardSection) {
+            moveElement(boardSection, leftPanel, null);
+            boardSection.style.display = 'block';
+        }
+        if (actionBar) {
+            moveElement(actionBar, leftPanel, null);
+            actionBar.style.display = 'flex';
+            actionBar.style.marginTop = '0.6rem';
+            actionBar.style.padding = '0.6rem 0';
+        }
+    }
+
+    var opponentInfo = document.getElementById('opponentInfo');
+    if (opponentInfo) opponentInfo.style.display = 'none';
+
+    // 行动日志放右侧，窄而高；如果HTML里已有就直接移动过去
+    if (actionLog) {
+        if (sidebar) moveElement(actionLog, sidebar, sidebar.firstChild || null);
+        actionLog.style.cssText = 'margin:10px 0;padding:10px 12px;background:#1a1a2e;border-radius:8px;height:430px;overflow-y:auto;font-size:13px;color:#eee;width:100%;box-sizing:border-box;border:1px solid #444;line-height:1.55;display:block;';
+    }
+}
+
 window.playerAction = function(action) {
-    // 检查是否在对战模式
     if (typeof battleState !== 'undefined' && battleState.active) {
         handlePlayerAction(action);
     } else if (originalPlayerAction) {
@@ -799,183 +935,30 @@ window.playerAction = function(action) {
     }
 };
 
-// 修改startBattle函数
-window.startBattle = function() {
-    window.gameMode = 'battle';
-    document.getElementById('coverScreen').classList.add('hidden');
-    document.getElementById('gameScreen').classList.remove('hidden');
-    
-    // 隐藏难度选择器（对战模式不需要）
-    var difficultySelector = document.querySelector('.difficulty-selector');
-    if (difficultySelector) difficultySelector.style.display = 'none';
-    
-    // 隐藏练习模式的所有元素（但不隐藏整个sidebar）
-    var practiceElements = document.querySelectorAll('.sidebar-card, .feedback-panel, .reasoning-section, .stats-row, .context-grid, .teaching-section, .mistakes-section, .opponent-range-section');
-    for (var i = 0; i < practiceElements.length; i++) {
-        practiceElements[i].style.display = 'none';
-    }
-    
-    // 确保sidebar显示（用于放日志窗口、手牌、按钮）
-    var sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.style.display = 'flex';
-        sidebar.style.width = '320px';
-        sidebar.style.flexDirection = 'column';
-        sidebar.style.gap = '10px';
-    }
-    
-    // 隐藏left-panel（对战模式不需要）
-    var leftPanel = document.querySelector('.left-panel');
-    if (leftPanel) {
-        leftPanel.style.display = 'none';
-    }
-    
-    // 隐藏原来的对手信息（用座位代替）
-    var opponentInfo = document.getElementById('opponentInfo');
-    if (opponentInfo) opponentInfo.style.display = 'none';
-    
-    // 隐藏middle-panel（把动作按钮移到sidebar）
-    var middlePanel = document.querySelector('.middle-panel');
-    if (middlePanel) middlePanel.style.display = 'none';
-    
-    // 把动作按钮移到sidebar底部
-    var actionBar = document.querySelector('.action-bar');
-    if (sidebar && actionBar) {
-        if (actionBar.parentNode) {
-            actionBar.parentNode.removeChild(actionBar);
-        }
-        sidebar.appendChild(actionBar);
-        actionBar.style.display = 'flex';
-        actionBar.style.marginTop = 'auto';
-        actionBar.style.padding = '1rem 0';
-    }
-    
-    // 把手牌区域移到sidebar顶部
-    var playerSection = document.querySelector('.player-section');
-    var boardSection = document.querySelector('.board-section');
-    if (sidebar && playerSection) {
-        if (playerSection.parentNode) {
-            playerSection.parentNode.removeChild(playerSection);
-        }
-        // 在sidebar顶部插入（在日志窗口前面）
-        if (sidebar.firstChild) {
-            sidebar.insertBefore(playerSection, sidebar.firstChild);
-        } else {
-            sidebar.appendChild(playerSection);
-        }
-        playerSection.style.display = 'block';
-    }
-    // 把公共牌区域也移到sidebar
-    if (sidebar && boardSection) {
-        if (boardSection.parentNode) {
-            boardSection.parentNode.removeChild(boardSection);
-        }
-        if (playerSection && playerSection.nextSibling) {
-            sidebar.insertBefore(boardSection, playerSection.nextSibling);
-        } else {
-            sidebar.appendChild(boardSection);
-        }
-        boardSection.style.display = 'block';
-    }
-    
-    // 初始化对战
-    initBattle();
-    
-    console.log('[对战] 对战模式启动完成，动作按钮已移至牌桌下方');
+window.startGame = function(difficulty) {
+    restorePracticeLayout();
+    if (originalStartGame) return originalStartGame(difficulty);
 };
 
-// 修改goToCover函数以恢复练习模式
-var originalGoToCover = window.goToCover;
+window.startBattle = function() {
+    var cover = document.getElementById('coverScreen');
+    var game = document.getElementById('gameScreen');
+    if (cover) cover.classList.add('hidden');
+    if (game) game.classList.remove('hidden');
+
+    prepareBattleLayout();
+    initBattle();
+    console.log('[对战] 对战模式启动完成：左侧牌桌+底部按钮，右侧行动日志');
+};
+
 window.goToCover = function() {
-    // 如果在对战模式，先清理
-    if (typeof battleState !== 'undefined' && battleState.active) {
-        battleState.active = false;
-        window.gameMode = 'practice';
-        
-        // 恢复所有练习模式元素
-        var practiceElements = document.querySelectorAll('.sidebar-card, .feedback-panel, .reasoning-section, .stats-row, .context-grid, .teaching-section, .mistakes-section, .opponent-range-section, .opponent-info');
-        for (var i = 0; i < practiceElements.length; i++) {
-            practiceElements[i].style.display = '';
-        }
-        
-        // 恢复middle-panel
-        var middlePanel = document.querySelector('.middle-panel');
-        if (middlePanel) {
-            var children = middlePanel.children;
-            for (var j = 0; j < children.length; j++) {
-                children[j].style.display = '';
-            }
-            middlePanel.style.display = '';
-        }
-        
-        // 恢复sidebar
-        var sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-            sidebar.style.display = '';
-            sidebar.style.flexDirection = '';
-            sidebar.style.gap = '';
-        }
-        
-        // 恢复left-panel（显示）
-        var leftPanel = document.querySelector('.left-panel');
-        if (leftPanel) leftPanel.style.display = '';
-        
-        // 把手牌区域移回left-panel
-        var playerSection = document.querySelector('.player-section');
-        if (playerSection && leftPanel) {
-            if (playerSection.parentNode) {
-                playerSection.parentNode.removeChild(playerSection);
-            }
-            // 插入到left-panel中，在info-bar后面
-            var infoBar = leftPanel.querySelector('.info-bar');
-            if (infoBar && infoBar.nextSibling) {
-                leftPanel.insertBefore(playerSection, infoBar.nextSibling);
-            } else {
-                leftPanel.appendChild(playerSection);
-            }
-            playerSection.style.display = '';
-        }
-        
-        // 把公共牌区域移回left-panel
-        var boardSection = document.querySelector('.board-section');
-        if (boardSection && leftPanel) {
-            if (boardSection.parentNode) {
-                boardSection.parentNode.removeChild(boardSection);
-            }
-            if (playerSection && playerSection.nextSibling) {
-                leftPanel.insertBefore(boardSection, playerSection.nextSibling);
-            } else {
-                leftPanel.appendChild(boardSection);
-            }
-            boardSection.style.display = '';
-        }
-        
-        // 把action-bar移回middle-panel
-        var actionBar = document.querySelector('.action-bar');
-        var originalMiddlePanel = document.querySelector('.middle-panel');
-        if (actionBar && originalMiddlePanel && actionBar.parentNode !== originalMiddlePanel) {
-            actionBar.parentNode.removeChild(actionBar);
-            originalMiddlePanel.insertBefore(actionBar, originalMiddlePanel.firstChild);
-            actionBar.style.marginTop = '';
-            actionBar.style.padding = '';
-            actionBar.style.display = '';
-        }
-        
-        // 移除对战座位
-        var seats = document.querySelectorAll('.seat');
-        for (var k = 0; k < seats.length; k++) {
-            seats[k].parentNode.removeChild(seats[k]);
-        }
-    }
-    
-    // 调用原始goToCover
+    restorePracticeLayout();
     if (originalGoToCover) {
         originalGoToCover();
     } else {
-        window.gameState.gameStarted = false;
-        document.getElementById('coverScreen').classList.remove('hidden');
-        document.getElementById('gameScreen').classList.add('hidden');
+        var cover = document.getElementById('coverScreen');
+        var game = document.getElementById('gameScreen');
+        if (cover) cover.classList.remove('hidden');
+        if (game) game.classList.add('hidden');
     }
 };
-
-console.log('[对战] battle.js加载完成，startBattle已注册到全局');
