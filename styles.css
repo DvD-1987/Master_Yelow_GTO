@@ -893,3 +893,213 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Sego
 .calc-btn.secondary:hover {
     background: rgba(255,215,0,0.2);
 }
+
+/* ============ 手机端响应式适配 (max-width: 768px) ============ */
+@media (max-width: 768px) {
+    /* 全局调整 */
+    body {
+        font-size: 13px;
+        overflow-x: hidden;
+    }
+
+    /* 游戏头部在手机上换行 */
+    .game-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    /* 三栏布局改为单列 */
+    .game-area {
+        flex-direction: column;
+        overflow-y: auto;
+        height: auto;
+        min-height: 0;
+    }
+
+    /* 左栏调整为全宽 */
+    .left-panel {
+        flex: none;
+        width: 100%;
+        padding: 0.3rem;
+        overflow-y: visible;
+    }
+
+    /* 牌桌容器缩小 */
+    .casino-table-wrapper {
+        min-height: 200px;
+        max-height: 35vh;
+        margin: 0.3rem 0;
+    }
+
+    .casino-table {
+        width: min(95%, 600px);
+        height: min(45vw, 280px);
+    }
+
+    /* 信息栏更紧凑 */
+    .info-bar {
+        gap: 0.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .info-chip {
+        padding: 0.3rem 0.6rem;
+        min-width: 60px;
+    }
+
+    /* 中间栏全宽显示 */
+    .middle-panel {
+        flex: none;
+        width: 100%;
+        border-left: none;
+        border-right: none;
+        border-top: 1px solid rgba(255,215,0,0.2);
+        padding: 0.5rem;
+        overflow-y: visible;
+    }
+
+    /* 侧边栏全宽显示 */
+    .sidebar {
+        width: 100%;
+        flex: none;
+        border-left: none;
+        border-top: 1px solid rgba(255,215,0,0.2);
+        padding: 0.5rem;
+        max-height: none;
+    }
+
+    /* 动作按钮缩小 */
+    .action-btn {
+        width: 60px;
+        height: 60px;
+    }
+
+    .btn-text {
+        font-size: 0.8rem;
+    }
+
+    .btn-key {
+        font-size: 0.65rem;
+        bottom: 4px;
+        right: 6px;
+    }
+
+    /* 扑克牌缩小 */
+    .card {
+        width: 50px;
+        height: 70px;
+        font-size: 1.6rem;
+    }
+
+    .card-corner {
+        font-size: 0.9rem;
+    }
+
+    /* 座位信息缩小 */
+    .seat {
+        width: 70px;
+        height: 55px;
+        padding: 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .seat-name {
+        font-size: 0.7rem;
+    }
+
+    .seat-chips {
+        font-size: 0.6rem;
+    }
+
+    /* 庄家按钮缩小 */
+    .dealer-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 0.8rem;
+        top: -25px;
+    }
+
+    /* 反馈面板和推理区域更紧凑 */
+    .feedback-panel {
+        padding: 0.6rem;
+        min-height: 80px;
+    }
+
+    .reasoning-section.show {
+        max-height: 250px;
+    }
+
+    /* 封面卡片在手机上 */
+    .cover-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .cover-card {
+        padding: 1.2rem 0.8rem;
+    }
+
+    .cover-title {
+        font-size: 1.2rem;
+    }
+
+    .cover-desc {
+        font-size: 0.8rem;
+    }
+
+    /* 模态框适配手机 */
+    .modal-content {
+        max-width: 95%;
+        margin: 1rem auto;
+    }
+
+    .probability-modal,
+    .review-modal {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+
+    /* 标签页在手机上换行 */
+    .prob-tabs {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .prob-tab {
+        flex: 1 1 45%;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    /* 复盘步骤指示器换行 */
+    .review-steps {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .step {
+        flex: 1 1 30%;
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+        text-align: center;
+    }
+
+    /* 表单在手机上更紧凑 */
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    /* 动作日志在手机上全宽 */
+    #actionLog {
+        width: 100%;
+        height: 200px;
+        margin: 0.5rem 0;
+    }
+}
